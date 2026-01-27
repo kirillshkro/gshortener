@@ -8,10 +8,14 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/kirillshkro/gshortener/internal/handler/shortener"
 )
 
 func main() {
 	endpoint := "http://localhost:8080/"
+	//Добавляем хандлеры
+	http.HandleFunc(endpoint, shortener.UrlEncode)
 	// контейнер данных для запроса
 	data := url.Values{}
 	// приглашение в консоли
