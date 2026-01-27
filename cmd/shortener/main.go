@@ -14,9 +14,13 @@ import (
 
 func main() {
 	endpoint := "http://localhost:8080/"
+	mux := http.NewServeMux()
 	//Добавляем хандлеры
-	http.HandleFunc(endpoint, shortener.URLEncode)
-	http.HandleFunc(endpoint+`{id}`, shortener.URLDecode)
+	mux.HandleFunc(endpoint, shortener.URLEncode)
+	mux.HandleFunc(endpoint+`{id}`, shortener.URLDecode)
+	if err := http.ListenAndServe(endpoint, mux); err != nil {
+		fmt.Printf("error listen server is %s\n", err.Error())
+	}
 	// контейнер данных для запроса
 	data := url.Values{}
 	// приглашение в консоли
