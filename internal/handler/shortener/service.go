@@ -11,7 +11,7 @@ func URLEncode(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	resp.Header().Set("Content-Type", "text/plain")
-	resp.Header().Add("Content-Length", "30")
+	//resp.Header().Add("Content-Length", "30")
 	resp.WriteHeader(http.StatusCreated)
 
 	body := []byte("http://localhost:8080/EwHXdJfB")
