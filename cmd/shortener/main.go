@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	endpoint := "http://localhost:8080/"
+	endpoint := "/"
 	mux := http.NewServeMux()
 	//Добавляем хандлеры
 	mux.HandleFunc(endpoint, shortener.URLEncode)
