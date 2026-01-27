@@ -18,7 +18,7 @@ func main() {
 	//Добавляем хандлеры
 	mux.HandleFunc(endpoint, shortener.URLEncode)
 	mux.HandleFunc(endpoint+`{id}`, shortener.URLDecode)
-	if err := http.ListenAndServe(endpoint, mux); err != nil {
+	if err := http.ListenAndServe("http://localhost:8080", mux); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
 	}
 	// контейнер данных для запроса
