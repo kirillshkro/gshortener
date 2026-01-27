@@ -26,6 +26,6 @@ func URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	resp.Header().Set("Location", "http://qem2umo9f.ru/")
+	resp.Header().Set("Location", "http://a3cdxgp.yandex/vfayg38")
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }
