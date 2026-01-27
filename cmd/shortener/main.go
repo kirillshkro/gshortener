@@ -15,8 +15,8 @@ import (
 func main() {
 	endpoint := "http://localhost:8080/"
 	//Добавляем хандлеры
-	http.HandleFunc(endpoint, shortener.UrlEncode)
-	http.HandleFunc(endpoint+`{id}`, shortener.UrlDecode)
+	http.HandleFunc(endpoint, shortener.URLEncode)
+	http.HandleFunc(endpoint+`{id}`, shortener.URLDecode)
 	// контейнер данных для запроса
 	data := url.Values{}
 	// приглашение в консоли

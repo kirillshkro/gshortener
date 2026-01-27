@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func UrlEncode(resp http.ResponseWriter, req *http.Request) {
+func URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
@@ -21,7 +21,7 @@ func UrlEncode(resp http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func UrlDecode(resp http.ResponseWriter, req *http.Request) {
+func URLDecode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
