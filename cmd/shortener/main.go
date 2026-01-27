@@ -1,13 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"net/http"
-	"net/url"
-	"os"
-	"strings"
 
 	"github.com/kirillshkro/gshortener/internal/handler/shortener"
 )
@@ -21,7 +16,7 @@ func main() {
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
 	}
-	// контейнер данных для запроса
+	/*// контейнер данных для запроса
 	data := url.Values{}
 	// приглашение в консоли
 	fmt.Println("Введите длинный URL")
@@ -60,5 +55,5 @@ func main() {
 		panic(err)
 	}
 	// и печатаем его
-	fmt.Println(string(body))
+	fmt.Println(string(body))*/
 }
