@@ -26,11 +26,6 @@ func URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	query := req.URL.Query()
-	id := query.Get("id")
-	log.Println("id = ", id)
-	if id == "EwHXdJfB" {
-		resp.Header().Set("Location", "https://practicum.yandex.ru")
-		resp.WriteHeader(http.StatusTemporaryRedirect)
-	}
+	resp.Header().Set("Location", "https://practicum.yandex.ru")
+	resp.WriteHeader(http.StatusTemporaryRedirect)
 }
