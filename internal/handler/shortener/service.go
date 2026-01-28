@@ -17,7 +17,7 @@ func URLEncode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	baseURL := req.Host
+	baseURL := req.URL.Scheme + req.Host
 	resp.Header().Set("Content-Type", "text/plain")
 	resp.WriteHeader(http.StatusCreated)
 
