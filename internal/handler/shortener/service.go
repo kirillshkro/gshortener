@@ -3,8 +3,11 @@ package shortener
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"io"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type URLString = string
@@ -13,39 +16,41 @@ var urls map[URLString]string = make(map[URLString]string)
 
 // Принимает на вход URL, возвращает базовый URL сервиса + хэш исходного URL
 func URLEncode(resp http.ResponseWriter, req *http.Request) {
+	const baseURL = "http://localhost:8080/"
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	baseURL := "http://" + req.Host
+	defer req.Body.Close()
+	bodyReq, err := io.ReadAll(req.Body)
+	if err != nil {
+		log.Println("cannot read request: ", err.Error())
+	}
+	log.Println("body = ", string(bodyReq))
 	resp.Header().Set("Content-Type", "text/plain")
 	resp.WriteHeader(http.StatusCreated)
-
-	//получить URI
-	content := req.URL.Path
-	hasher := sha1.New()
-	//взять от него хэш
-	raw := hasher.Sum([]byte(content))
-	shorted := hex.EncodeToString(raw[:])
-	outURL := req.URL.Scheme + string(shorted[:8])
-
-	body := baseURL + req.URL.Path
-	_, err := resp.Write([]byte(body))
-	if err != nil {
+	hashed := sha1.Sum(bodyReq)
+	shorthed := hashed[:6]
+	content := hex.EncodeToString(shorthed)
+	log.Println("shorted: ", content)
+	outData := baseURL + content
+	//resp.Header().Set("Content-Type", "text/plain")
+	if _, ok := urls[content]; !ok {
+		urls[content] = string(bodyReq)
+	}
+	if _, err = resp.Write([]byte(outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
 	}
-	if _, ok := urls[outURL]; !ok {
-		urls[outURL] = body
-	}
-	log.Println("body = ", body)
 }
 
 func URLDecode(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	pattern := req.RequestURI[1:]
+	pattern := id
 	original := urls[pattern]
 	resp.Header().Set("Location", original)
 	resp.WriteHeader(http.StatusTemporaryRedirect)

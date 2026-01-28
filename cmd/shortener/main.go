@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener"
 )
 
 func main() {
-	endpoint := "/"
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	//Добавляем хандлеры
-	mux.HandleFunc(endpoint, shortener.URLEncode)
-	mux.HandleFunc(`/2fda39a3`, shortener.URLDecode)
+	mux.HandleFunc("/", shortener.URLEncode)
+	mux.HandleFunc("/{id}", shortener.URLDecode).Methods("GET")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
 	}
