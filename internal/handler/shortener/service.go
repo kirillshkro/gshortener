@@ -1,23 +1,41 @@
 package shortener
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"log"
 	"net/http"
 )
 
+type URLString = string
+
+var urls map[URLString]string = make(map[URLString]string)
+
+// Принимает на вход URL, возвращает базовый URL сервиса + хэш исходного URL
 func URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	baseURL := req.Host
 	resp.Header().Set("Content-Type", "text/plain")
-	//resp.Header().Add("Content-Length", "30")
 	resp.WriteHeader(http.StatusCreated)
 
-	body := []byte("http://localhost:8080/EwHXdJfB")
-	_, err := resp.Write(body)
+	//получить URI
+	content := req.URL.Path
+	hasher := sha1.New()
+	//взять от него хэш
+	raw := hasher.Sum([]byte(content))
+	shorted := hex.EncodeToString(raw[:])
+	outURL := req.URL.Scheme + string(shorted[:8])
+
+	body := baseURL + req.URL.Path
+	_, err := resp.Write([]byte(body))
 	if err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
+	}
+	if _, ok := urls[outURL]; !ok {
+		urls[outURL] = body
 	}
 }
 
@@ -26,6 +44,8 @@ func URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	resp.Header().Set("Location", "http://a3cdxgp.yandex/vfayg38")
+	pattern := req.RequestURI[1:]
+	original := urls[pattern]
+	resp.Header().Set("Location", original)
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }
