@@ -12,7 +12,7 @@ func main() {
 	mux := mux.NewRouter()
 	//Добавляем хандлеры
 	mux.HandleFunc("/", shortener.URLEncode)
-	mux.HandleFunc("/{id}", shortener.URLDecode).Methods("GET")
+	mux.HandleFunc("/{id}", shortener.URLDecode).Methods(http.MethodGet)
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
 	}
