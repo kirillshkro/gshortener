@@ -26,15 +26,10 @@ func URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Println("cannot read request: ", err.Error())
 	}
-	log.Println("body = ", string(bodyReq))
 	resp.Header().Set("Content-Type", "text/plain")
 	resp.WriteHeader(http.StatusCreated)
-	hashed := sha1.Sum(bodyReq)
-	shorthed := hashed[:6]
-	content := hex.EncodeToString(shorthed)
-	log.Println("shorted: ", content)
+	content := hashing(bodyReq)
 	outData := baseURL + content
-	//resp.Header().Set("Content-Type", "text/plain")
 	if _, ok := urls[content]; !ok {
 		urls[content] = string(bodyReq)
 	}
@@ -54,4 +49,11 @@ func URLDecode(resp http.ResponseWriter, req *http.Request) {
 	original := urls[pattern]
 	resp.Header().Set("Location", original)
 	resp.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func hashing(data []byte) string {
+	hashed := sha1.Sum(data)
+	shorthed := hashed[:6]
+	content := hex.EncodeToString(shorthed)
+	return content
 }
