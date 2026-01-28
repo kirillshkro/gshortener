@@ -12,7 +12,7 @@ func main() {
 	mux := http.NewServeMux()
 	//Добавляем хандлеры
 	mux.HandleFunc(endpoint, shortener.URLEncode)
-	mux.HandleFunc(`/EwHXdJfB`, shortener.URLDecode)
+	mux.HandleFunc(`/2fda39a3`, shortener.URLDecode)
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
 	}
