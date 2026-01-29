@@ -120,7 +120,7 @@ func Test_URLDecode(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req, err := http.NewRequest(http.MethodGet, string(hash), nil)
+			req, err := http.NewRequest(test.method, string(hash), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -129,9 +129,7 @@ func Test_URLDecode(t *testing.T) {
 			mux.ServeHTTP(rr, req)
 
 			// проверка статуса
-			if status := rr.Code; status != http.StatusTemporaryRedirect {
-				t.Errorf("expected status %d, got %d", http.StatusTemporaryRedirect, status)
-			}
+			assert.Equal(t, test.status, rr.Code)
 
 			// проверяем header Location
 			var location string
