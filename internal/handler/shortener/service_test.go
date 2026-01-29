@@ -14,6 +14,7 @@ import (
 )
 
 func Test_URLEncode(t *testing.T) {
+	const testData = "https://practicum.yandex.ru"
 	tests := []struct {
 		name   string
 		method string
@@ -24,36 +25,36 @@ func Test_URLEncode(t *testing.T) {
 		{
 			name:   "POST request",
 			method: http.MethodPost,
-			uri:    "https://practicum.yandex.ru",
-			hash:   hashing([]byte("https://practicum.yandex.ru")),
+			uri:    testData,
+			hash:   hashing([]byte(testData)),
 			code:   http.StatusCreated,
 		},
 		{
 			name:   "GET request",
 			method: http.MethodGet,
-			uri:    "https://practicum.yandex.ru",
-			hash:   hashing([]byte("https://practicum.yandex.ru")),
+			uri:    testData,
+			hash:   hashing([]byte(testData)),
 			code:   http.StatusBadRequest,
 		},
 		{
 			name:   "PUT request",
 			method: http.MethodPut,
-			uri:    "https://practicum.yandex.ru",
-			hash:   hashing([]byte("https://practicum.yandex.ru")),
+			uri:    testData,
+			hash:   hashing([]byte(testData)),
 			code:   http.StatusBadRequest,
 		},
 		{
 			name:   "PATCH request",
 			method: http.MethodPatch,
-			uri:    "https://practicum.yandex.ru",
-			hash:   hashing([]byte("https://practicum.yandex.ru")),
+			uri:    testData,
+			hash:   hashing([]byte(testData)),
 			code:   http.StatusBadRequest,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			body := strings.NewReader(`{` + test.uri + `}`)
-			req := httptest.NewRequest(test.method, "/", body)
+			body, _ := json.Marshal(test.uri)
+			req := httptest.NewRequest(test.method, "/", bytes.NewBuffer(body))
 			recorder := httptest.NewRecorder()
 			URLEncode(recorder, req)
 			if recorder.Code != test.code {
@@ -97,6 +98,24 @@ func Test_URLDecode(t *testing.T) {
 			uri:    testURL,
 			status: http.StatusTemporaryRedirect,
 		},
+		{
+			name:   "Bad POST request",
+			method: http.MethodPost,
+			uri:    testURL,
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "Bad PUT request",
+			method: http.MethodPut,
+			uri:    testURL,
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "Bad PATCH request",
+			method: http.MethodPatch,
+			uri:    testURL,
+			status: http.StatusBadRequest,
+		},
 	}
 
 	for _, test := range tests {
@@ -115,7 +134,11 @@ func Test_URLDecode(t *testing.T) {
 			}
 
 			// проверяем header Location
-			location := rr.Header().Get("Location")
+			var location string
+			valLoc := rr.Header().Get("Location")
+			if err = json.NewDecoder(strings.NewReader(valLoc)).Decode(&location); err != nil {
+				t.Fatal(err)
+			}
 			assert.Equal(t, test.uri, location)
 		})
 	}
