@@ -39,12 +39,12 @@ func URLEncode(resp http.ResponseWriter, req *http.Request) {
 }
 
 func URLDecode(resp http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	id := vars["id"]
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	vars := mux.Vars(req)
+	id := vars["id"]
 	pattern := id
 	original := urls[pattern]
 	resp.Header().Set("Location", original)
