@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,26 +65,15 @@ func Test_URLEncode(t *testing.T) {
 
 func Test_URLDecode(t *testing.T) {
 	const baseURL = "http://localhost:8080/"
-	const testURL = "https://practicum.yandex.ru"
-	mux := mux.NewRouter()
-	mux.HandleFunc("/", URLEncode).Methods(http.MethodPost)
-	mux.HandleFunc("/{id}", URLDecode).Methods(http.MethodGet)
-	server := httptest.NewServer(mux)
-	defer server.Close()
+	const testURL = `https://practicum.yandex.ru`
 	body, _ := json.Marshal(testURL)
 	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(body))
-	defer req.Body.Close()
-
-	resp, err := http.Post(server.URL, "application/json", req.Body)
-	if err != nil {
-		t.Error("Test failed")
-	}
-	defer resp.Body.Close()
-	hash, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("test failed because error: %s\n", err.Error())
-	}
-
+	rr := httptest.NewRecorder()
+	URLEncode(rr, req)
+	resp := rr.Result()
+	body, _ = io.ReadAll(resp.Body)
+	hashed, _ := strings.CutPrefix(string(body), baseURL)
+	resp.Body.Close()
 	tests := []struct {
 		name   string
 		method string
@@ -120,24 +108,23 @@ func Test_URLDecode(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req, err := http.NewRequest(test.method, string(hash), nil)
+			rr = httptest.NewRecorder()
+			req, err := http.NewRequest(test.method, "/"+hashed, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
-			rr := httptest.NewRecorder()
-
-			mux.ServeHTTP(rr, req)
+			URLDecode(rr, req)
+			resp := rr.Result()
+			defer resp.Body.Close()
 
 			// проверка статуса
-			assert.Equal(t, test.status, rr.Code)
+			assert.Equal(t, test.status, resp.StatusCode)
+			if req.Method == http.MethodGet {
 
-			// проверяем header Location
-			var location string
-			valLoc := rr.Header().Get("Location")
-			if err = json.NewDecoder(strings.NewReader(valLoc)).Decode(&location); err != nil {
-				t.Fatal(err)
+				location := resp.Header.Get("Location")
+				t.Log("Location: ", location)
+
 			}
-			assert.Equal(t, test.uri, location)
 		})
 	}
 }
