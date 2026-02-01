@@ -28,7 +28,7 @@ func URLEncode(resp http.ResponseWriter, req *http.Request) {
 	}
 	resp.Header().Set("Content-Type", "text/plain")
 	resp.WriteHeader(http.StatusCreated)
-	content := hashing(bodyReq)
+	content := Hashing(bodyReq)
 	outData := baseURL + content
 	if _, ok := urls[content]; !ok {
 		urls[content] = string(bodyReq)
@@ -51,7 +51,7 @@ func URLDecode(resp http.ResponseWriter, req *http.Request) {
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func hashing(data []byte) string {
+func Hashing(data []byte) string {
 	hashed := sha1.Sum(data)
 	shorthed := hashed[:6]
 	content := hex.EncodeToString(shorthed)
