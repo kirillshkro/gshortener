@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var service *Service = NewService()
+
 func Test_URLEncode(t *testing.T) {
 	const testData = "https://practicum.yandex.ru"
 	tests := []struct {
@@ -55,7 +57,7 @@ func Test_URLEncode(t *testing.T) {
 			body, _ := json.Marshal(test.uri)
 			req := httptest.NewRequest(test.method, "/", bytes.NewBuffer(body))
 			recorder := httptest.NewRecorder()
-			URLEncode(recorder, req)
+			service.URLEncode(recorder, req)
 			if recorder.Code != test.code {
 				t.Errorf("test failed because expected code: %d, real code: %d\n", test.code, recorder.Code)
 			}
@@ -69,7 +71,7 @@ func Test_URLDecode(t *testing.T) {
 	body, _ := json.Marshal(testURL)
 	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(body))
 	rr := httptest.NewRecorder()
-	URLEncode(rr, req)
+	service.URLEncode(rr, req)
 	resp := rr.Result()
 	body, _ = io.ReadAll(resp.Body)
 	hashed, _ := strings.CutPrefix(string(body), baseURL)
@@ -113,7 +115,7 @@ func Test_URLDecode(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			URLDecode(rr, req)
+			service.URLDecode(rr, req)
 			resp := rr.Result()
 			defer resp.Body.Close()
 
