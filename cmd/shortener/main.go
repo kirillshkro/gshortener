@@ -13,11 +13,12 @@ import (
 var cfg *config.Config
 
 func main() {
+	service := shortener.NewService()
 	parseFlags()
 	mux := mux.NewRouter()
 	//Добавляем хандлеры
-	mux.HandleFunc("/", shortener.URLEncode)
-	mux.HandleFunc("/{id}", shortener.URLDecode).Methods(http.MethodGet)
+	mux.HandleFunc("/", service.URLEncode)
+	mux.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet)
 	if err := http.ListenAndServe(cfg.Address, mux); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
 	}

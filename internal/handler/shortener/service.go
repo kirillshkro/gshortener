@@ -8,15 +8,35 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/kirillshkro/gshortener/internal/repository/storage"
 )
 
-type URLString = string
+type Service struct {
+	ServAddr storage.RawURL
+	Stor     *storage.Storage
+}
 
-var urls map[URLString]string = make(map[URLString]string)
+type IService interface {
+	URLEncode(resp http.ResponseWriter, req *http.Request)
+	URLDecode(resp http.ResponseWriter, req *http.Request)
+}
+
+func NewService() *Service {
+	return &Service{
+		ServAddr: storage.RawURL("localhost:8080"),
+		Stor:     storage.NewStorage(),
+	}
+}
+
+func NewServiceWithAddr(addr storage.RawURL) *Service {
+	return &Service{
+		ServAddr: addr,
+		Stor:     storage.NewStorage(),
+	}
+}
 
 // Принимает на вход URL, возвращает базовый URL сервиса + хэш исходного URL
-func URLEncode(resp http.ResponseWriter, req *http.Request) {
-	const baseURL = "http://localhost:8080/"
+func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
@@ -29,16 +49,14 @@ func URLEncode(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-Type", "text/plain")
 	resp.WriteHeader(http.StatusCreated)
 	content := Hashing(bodyReq)
-	outData := baseURL + content
-	if _, ok := urls[content]; !ok {
-		urls[content] = string(bodyReq)
-	}
+	outData := string(s.ServAddr) + content
+	s.Stor.SetData(storage.ShortURL(content), storage.RawURL(bodyReq))
 	if _, err = resp.Write([]byte(outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
 	}
 }
 
-func URLDecode(resp http.ResponseWriter, req *http.Request) {
+func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
@@ -46,8 +64,8 @@ func URLDecode(resp http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
 	pattern := id
-	original := urls[pattern]
-	resp.Header().Set("Location", original)
+	original := s.Stor.Data(storage.ShortURL(pattern))
+	resp.Header().Set("Location", string(original))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }
 
