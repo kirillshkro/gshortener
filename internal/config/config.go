@@ -1,11 +1,5 @@
 package config
 
-import (
-	"bytes"
-
-	"github.com/kirillshkro/gshortener/internal/handler/shortener"
-)
-
 type Config struct {
 	Address    string `json:"address"`
 	ShortedURL string `json:"shorted_url"`
@@ -13,7 +7,7 @@ type Config struct {
 
 func NewConfig() *Config {
 	baseAddress := "localhost:8080"
-	shorted := shortener.Hashing(bytes.NewBufferString(baseAddress).Bytes())
+	shorted := "localhost:8000"
 	return &Config{
 		Address:    baseAddress,
 		ShortedURL: shorted,

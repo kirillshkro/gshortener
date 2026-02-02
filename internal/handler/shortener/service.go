@@ -12,8 +12,9 @@ import (
 )
 
 type Service struct {
-	ServAddr storage.RawURL
-	Stor     *storage.Storage
+	ServAddr   storage.RawURL
+	ResultAddr storage.ShortURL
+	Stor       *storage.Storage
 }
 
 type IService interface {
@@ -23,15 +24,25 @@ type IService interface {
 
 func NewService() *Service {
 	return &Service{
-		ServAddr: storage.RawURL("localhost:8080"),
-		Stor:     storage.NewStorage(),
+		ServAddr:   storage.RawURL("localhost:8080"),
+		ResultAddr: storage.ShortURL("localhost:8000"),
+		Stor:       storage.NewStorage(),
 	}
 }
 
 func NewServiceWithAddr(addr storage.RawURL) *Service {
 	return &Service{
-		ServAddr: addr,
-		Stor:     storage.NewStorage(),
+		ServAddr:   addr,
+		ResultAddr: storage.ShortURL("localhost:8000"),
+		Stor:       storage.NewStorage(),
+	}
+}
+
+func NewServiceWithAddrWithAddrShortener(addr storage.RawURL, shortAddr storage.ShortURL) *Service {
+	return &Service{
+		ServAddr:   addr,
+		ResultAddr: shortAddr,
+		Stor:       storage.NewStorage(),
 	}
 }
 
@@ -49,7 +60,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-Type", "text/plain")
 	resp.WriteHeader(http.StatusCreated)
 	content := Hashing(bodyReq)
-	outData := string(s.ServAddr) + content
+	outData := string(s.ResultAddr) + "/" + content
 	s.Stor.SetData(storage.ShortURL(content), storage.RawURL(bodyReq))
 	if _, err = resp.Write([]byte(outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())

@@ -8,13 +8,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kirillshkro/gshortener/internal/config"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener"
+	"github.com/kirillshkro/gshortener/internal/repository/storage"
 )
 
 var cfg *config.Config
 
 func main() {
-	service := shortener.NewService()
 	parseFlags()
+	service := shortener.NewServiceWithAddrWithAddrShortener(storage.RawURL(cfg.Address), storage.ShortURL(cfg.ShortedURL))
 	mux := mux.NewRouter()
 	//Добавляем хандлеры
 	mux.HandleFunc("/", service.URLEncode)
