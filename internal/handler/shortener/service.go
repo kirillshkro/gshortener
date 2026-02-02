@@ -62,7 +62,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	content := Hashing(bodyReq)
 	outData := string(s.ResultAddr) + "/" + content
 	s.Stor.SetData(storage.ShortURL(content), storage.RawURL(bodyReq))
-	if _, err = resp.Write([]byte(outData)); err != nil {
+	if _, err = resp.Write([]byte("https://" + outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
 	}
 }
