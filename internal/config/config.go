@@ -7,7 +7,7 @@ type Config struct {
 
 func NewConfig() *Config {
 	baseAddress := "localhost:8080"
-	shorted := "localhost:8000"
+	shorted := "localhost:8080"
 	return &Config{
 		Address:    baseAddress,
 		ShortedURL: shorted,
