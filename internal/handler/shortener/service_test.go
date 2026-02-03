@@ -9,12 +9,25 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gorilla/mux"
+	"github.com/kirillshkro/gshortener/internal/repository/storage"
 	"github.com/stretchr/testify/assert"
 )
 
-var service *Service = NewService()
+var (
+	service  *Service
+	router   *mux.Router      = mux.NewRouter()
+	fakeServ *httptest.Server = httptest.NewServer(router)
+)
+
+func setup() {
+	service = NewServiceWithAddrWithAddrShortener(storage.RawURL(fakeServ.URL), storage.ShortURL(fakeServ.URL))
+	router.HandleFunc("/", service.URLEncode).Methods(http.MethodPost)
+	router.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
+}
 
 func Test_URLEncode(t *testing.T) {
+	setup()
 	const testData = "https://practicum.yandex.ru"
 	tests := []struct {
 		name   string
@@ -66,16 +79,20 @@ func Test_URLEncode(t *testing.T) {
 }
 
 func Test_URLDecode(t *testing.T) {
-	const baseURL = "http://localhost:8080/"
+	setup()
+
 	const testURL = `https://practicum.yandex.ru`
-	body, _ := json.Marshal(testURL)
-	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(body))
+	body, err := json.Marshal(testURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, fakeServ.URL, strings.NewReader(testURL))
 	rr := httptest.NewRecorder()
 	service.URLEncode(rr, req)
 	resp := rr.Result()
+	defer resp.Body.Close()
 	body, _ = io.ReadAll(resp.Body)
-	hashed, _ := strings.CutPrefix(string(body), baseURL)
-	resp.Body.Close()
+	hashed, _ := strings.CutPrefix(string(body), fakeServ.URL+"/")
 	tests := []struct {
 		name   string
 		method string
@@ -110,23 +127,19 @@ func Test_URLDecode(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			req := httptest.NewRequest(test.method, fakeServ.URL+"/"+hashed, nil)
 			rr = httptest.NewRecorder()
-			req, err := http.NewRequest(test.method, "/"+hashed, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
 			service.URLDecode(rr, req)
-			resp := rr.Result()
+			resp = rr.Result()
 			defer resp.Body.Close()
-
 			// проверка статуса
 			assert.Equal(t, test.status, resp.StatusCode)
 			if req.Method == http.MethodGet {
-
 				location := resp.Header.Get("Location")
 				t.Log("Location: ", location)
-
+				assert.Equal(t, testURL, location)
 			}
 		})
 	}
+	fakeServ.Close()
 }
