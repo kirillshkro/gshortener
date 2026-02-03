@@ -52,7 +52,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	baseURL := string(s.ResultAddr) + "/"
+	baseURL := "http://" + string(s.ResultAddr) + "/"
 	defer req.Body.Close()
 	bodyReq, err := io.ReadAll(req.Body)
 	if err != nil {
