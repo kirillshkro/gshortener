@@ -1,7 +1,6 @@
 package shortener
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -22,7 +21,7 @@ var (
 
 func setup() {
 	service = NewServiceWithAddrWithAddrShortener(storage.RawURL(fakeServ.URL), storage.ShortURL(fakeServ.URL))
-	router.HandleFunc("/", service.URLEncode).Methods(http.MethodPost)
+	router.HandleFunc("/", service.URLEncode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
 	router.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
 }
 
@@ -68,11 +67,18 @@ func Test_URLEncode(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			body, _ := json.Marshal(test.uri)
-			req := httptest.NewRequest(test.method, "/", bytes.NewBuffer(body))
-			recorder := httptest.NewRecorder()
-			service.URLEncode(recorder, req)
-			if recorder.Code != test.code {
-				t.Errorf("test failed because expected code: %d, real code: %d\n", test.code, recorder.Code)
+			req, err := http.NewRequest(test.method, fakeServ.URL+"/", strings.NewReader(string(body)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			client := fakeServ.Client()
+			resp, err := client.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != test.code {
+				t.Errorf("test failed because expected code: %d, real code: %d\n", test.code, resp.StatusCode)
 			}
 		})
 	}
@@ -80,19 +86,21 @@ func Test_URLEncode(t *testing.T) {
 
 func Test_URLDecode(t *testing.T) {
 	setup()
-
 	const testURL = `https://practicum.yandex.ru`
-	body, err := json.Marshal(testURL)
+	req, err := http.NewRequest(http.MethodPost, fakeServ.URL+"/", strings.NewReader(testURL))
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, fakeServ.URL, strings.NewReader(testURL))
 	rr := httptest.NewRecorder()
 	service.URLEncode(rr, req)
 	resp := rr.Result()
 	defer resp.Body.Close()
-	body, _ = io.ReadAll(resp.Body)
-	hashed, _ := strings.CutPrefix(string(body), fakeServ.URL+"/")
+	retURL, _ := io.ReadAll(resp.Body)
+	lIndex := strings.LastIndex(string(retURL), "/")
+	if lIndex < 0 {
+		return
+	}
+	id := retURL[lIndex+1:]
 	tests := []struct {
 		name   string
 		method string
@@ -127,17 +135,18 @@ func Test_URLDecode(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest(test.method, fakeServ.URL+"/"+hashed, nil)
+			req, err := http.NewRequest(test.method, fakeServ.URL+"/"+string(id), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
 			rr = httptest.NewRecorder()
 			service.URLDecode(rr, req)
 			resp = rr.Result()
 			defer resp.Body.Close()
-			// проверка статуса
 			assert.Equal(t, test.status, resp.StatusCode)
-			if req.Method == http.MethodGet {
+			if resp.StatusCode == http.StatusTemporaryRedirect {
 				location := resp.Header.Get("Location")
-				t.Log("Location: ", location)
-				assert.Equal(t, testURL, location)
+				assert.Equal(t, test.uri, location)
 			}
 		})
 	}
