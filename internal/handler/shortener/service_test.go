@@ -142,12 +142,12 @@ func Test_URLDecode(t *testing.T) {
 			rr = httptest.NewRecorder()
 			service.URLDecode(rr, req)
 			resp = rr.Result()
-			defer resp.Body.Close()
 			assert.Equal(t, test.status, resp.StatusCode)
 			if resp.StatusCode == http.StatusTemporaryRedirect {
 				location := resp.Header.Get("Location")
 				assert.Equal(t, test.uri, location)
 			}
+			resp.Body.Close()
 		})
 	}
 	fakeServ.Close()
