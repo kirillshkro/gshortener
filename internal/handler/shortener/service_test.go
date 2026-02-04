@@ -139,7 +139,7 @@ func Test_URLDecode(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			rr = httptest.NewRecorder()
+			rr := httptest.NewRecorder()
 			service.URLDecode(rr, req)
 			resp = rr.Result()
 			defer resp.Body.Close()
