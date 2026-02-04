@@ -52,7 +52,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	baseURL := "http://" + string(s.ResultAddr) + "/"
+	baseURL := string(s.ResultAddr)
 	defer req.Body.Close()
 	bodyReq, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -61,7 +61,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-Type", "text/plain")
 	resp.WriteHeader(http.StatusCreated)
 	content := Hashing(bodyReq)
-	outData := baseURL + content
+	outData := baseURL + "/" + content
 	s.Stor.SetData(storage.ShortURL(content), storage.RawURL(bodyReq))
 	if _, err = resp.Write([]byte(outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
@@ -74,14 +74,9 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	path := req.URL.Path
-	id, found := strings.CutPrefix(path, "/")
-	if !found {
-		resp.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	pattern := id
-	original := s.Stor.Data(storage.ShortURL(pattern))
-	resp.Header().Set("Location", string(original))
+	id := strings.TrimPrefix(path, "/")
+	location := s.Stor.Data(storage.ShortURL(id))
+	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }
 
