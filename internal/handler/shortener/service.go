@@ -23,22 +23,25 @@ type IService interface {
 	URLDecode(resp http.ResponseWriter, req *http.Request)
 }
 
+// Создает сервис со значениями по умолчанию
 func NewService() *Service {
 	return &Service{
 		ServAddr:   types.RawURL("localhost:8080"),
-		ResultAddr: types.ShortURL("localhost:8000"),
+		ResultAddr: types.ShortURL("localhost:8080"),
 		Stor:       storage.NewStorage(),
 	}
 }
 
+// Создает сервис с заданным IP-адресом и портом
 func NewServiceWithAddr(addr types.RawURL) *Service {
 	return &Service{
 		ServAddr:   addr,
-		ResultAddr: types.ShortURL("localhost:8000"),
+		ResultAddr: types.ShortURL("localhost:8080"),
 		Stor:       storage.NewStorage(),
 	}
 }
 
+// Создает сервис с заданными IP-адресом и портом, и URL сокращенных ссылок
 func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.ShortURL) *Service {
 	return &Service{
 		ServAddr:   addr,
@@ -69,6 +72,8 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// Принимает на вход сокращенный URL,
+// возвращает исходный
 func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
