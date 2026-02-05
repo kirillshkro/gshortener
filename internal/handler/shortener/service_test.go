@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/kirillshkro/gshortener/internal/repository/storage"
+	"github.com/kirillshkro/gshortener/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +19,7 @@ var (
 )
 
 func setup() {
-	service = NewServiceWithAddrWithAddrShortener(storage.RawURL(fakeServ.URL), storage.ShortURL(fakeServ.URL))
+	service = NewServiceWithAddrWithAddrShortener(types.RawURL(fakeServ.URL), types.ShortURL(fakeServ.URL))
 	router.HandleFunc("/", service.URLEncode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
 	router.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
 }
@@ -87,7 +87,7 @@ func Test_URLDecode(t *testing.T) {
 	setup()
 	const testURL = `https://practicum.yandex.ru`
 	id := Hashing([]byte(testURL))
-	service.Stor.SetData(storage.ShortURL(id), storage.RawURL(testURL))
+	service.Stor.SetData(types.ShortURL(id), types.RawURL(testURL))
 	tests := []struct {
 		name   string
 		method string

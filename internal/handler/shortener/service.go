@@ -9,11 +9,12 @@ import (
 	"strings"
 
 	"github.com/kirillshkro/gshortener/internal/repository/storage"
+	"github.com/kirillshkro/gshortener/internal/types"
 )
 
 type Service struct {
-	ServAddr   storage.RawURL
-	ResultAddr storage.ShortURL
+	ServAddr   types.RawURL
+	ResultAddr types.ShortURL
 	Stor       *storage.Storage
 }
 
@@ -24,21 +25,21 @@ type IService interface {
 
 func NewService() *Service {
 	return &Service{
-		ServAddr:   storage.RawURL("localhost:8080"),
-		ResultAddr: storage.ShortURL("localhost:8000"),
+		ServAddr:   types.RawURL("localhost:8080"),
+		ResultAddr: types.ShortURL("localhost:8000"),
 		Stor:       storage.NewStorage(),
 	}
 }
 
-func NewServiceWithAddr(addr storage.RawURL) *Service {
+func NewServiceWithAddr(addr types.RawURL) *Service {
 	return &Service{
 		ServAddr:   addr,
-		ResultAddr: storage.ShortURL("localhost:8000"),
+		ResultAddr: types.ShortURL("localhost:8000"),
 		Stor:       storage.NewStorage(),
 	}
 }
 
-func NewServiceWithAddrWithAddrShortener(addr storage.RawURL, shortAddr storage.ShortURL) *Service {
+func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.ShortURL) *Service {
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: shortAddr,
@@ -62,7 +63,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	resp.WriteHeader(http.StatusCreated)
 	content := Hashing(bodyReq)
 	outData := baseURL + "/" + content
-	s.Stor.SetData(storage.ShortURL(content), storage.RawURL(bodyReq))
+	s.Stor.SetData(types.ShortURL(content), types.RawURL(bodyReq))
 	if _, err = resp.Write([]byte(outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
 	}
@@ -75,7 +76,7 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	}
 	path := req.URL.Path
 	id := strings.TrimPrefix(path, "/")
-	location := s.Stor.Data(storage.ShortURL(id))
+	location := s.Stor.Data(types.ShortURL(id))
 	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }
