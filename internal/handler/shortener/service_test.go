@@ -2,14 +2,13 @@ package shortener
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/kirillshkro/gshortener/internal/repository/storage"
+	"github.com/kirillshkro/gshortener/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +19,7 @@ var (
 )
 
 func setup() {
-	service = NewServiceWithAddrWithAddrShortener(storage.RawURL(fakeServ.URL), storage.ShortURL(fakeServ.URL))
+	service = NewServiceWithAddrWithAddrShortener(types.RawURL(fakeServ.URL), types.ShortURL(fakeServ.URL))
 	router.HandleFunc("/", service.URLEncode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
 	router.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
 }
@@ -87,20 +86,8 @@ func Test_URLEncode(t *testing.T) {
 func Test_URLDecode(t *testing.T) {
 	setup()
 	const testURL = `https://practicum.yandex.ru`
-	req, err := http.NewRequest(http.MethodPost, fakeServ.URL+"/", strings.NewReader(testURL))
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	service.URLEncode(rr, req)
-	resp := rr.Result()
-	defer resp.Body.Close()
-	retURL, _ := io.ReadAll(resp.Body)
-	lIndex := strings.LastIndex(string(retURL), "/")
-	if lIndex < 0 {
-		return
-	}
-	id := retURL[lIndex+1:]
+	id := Hashing([]byte(testURL))
+	service.Stor.SetData(types.ShortURL(id), types.RawURL(testURL))
 	tests := []struct {
 		name   string
 		method string
@@ -141,7 +128,7 @@ func Test_URLDecode(t *testing.T) {
 			}
 			rr := httptest.NewRecorder()
 			service.URLDecode(rr, req)
-			resp = rr.Result()
+			resp := rr.Result()
 			defer resp.Body.Close()
 			assert.Equal(t, test.status, resp.StatusCode)
 			if resp.StatusCode == http.StatusTemporaryRedirect {
