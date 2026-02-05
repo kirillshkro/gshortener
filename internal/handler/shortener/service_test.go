@@ -2,7 +2,6 @@ package shortener
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -87,20 +86,8 @@ func Test_URLEncode(t *testing.T) {
 func Test_URLDecode(t *testing.T) {
 	setup()
 	const testURL = `https://practicum.yandex.ru`
-	req, err := http.NewRequest(http.MethodPost, fakeServ.URL+"/", strings.NewReader(testURL))
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	service.URLEncode(rr, req)
-	resp := rr.Result()
-	defer resp.Body.Close()
-	retURL, _ := io.ReadAll(resp.Body)
-	lIndex := strings.LastIndex(string(retURL), "/")
-	if lIndex < 0 {
-		return
-	}
-	id := retURL[lIndex+1:]
+	id := Hashing([]byte(testURL))
+	service.Stor.SetData(storage.ShortURL(id), storage.RawURL(testURL))
 	tests := []struct {
 		name   string
 		method string
@@ -139,9 +126,9 @@ func Test_URLDecode(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			rr = httptest.NewRecorder()
+			rr := httptest.NewRecorder()
 			service.URLDecode(rr, req)
-			resp = rr.Result()
+			resp := rr.Result()
 			defer resp.Body.Close()
 			assert.Equal(t, test.status, resp.StatusCode)
 			if resp.StatusCode == http.StatusTemporaryRedirect {
