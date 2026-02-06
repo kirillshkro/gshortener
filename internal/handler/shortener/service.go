@@ -81,6 +81,10 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	}
 	path := req.URL.Path
 	id := strings.TrimPrefix(path, "/")
+	if id == "" {
+		resp.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	location := s.Stor.Data(types.ShortURL(id))
 	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
