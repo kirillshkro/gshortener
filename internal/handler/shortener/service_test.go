@@ -65,7 +65,10 @@ func Test_URLEncode(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			body, _ := json.Marshal(test.uri)
+			body, err := json.Marshal(test.uri)
+			if err != nil {
+				t.Fatal(err)
+			}
 			req, err := http.NewRequest(test.method, fakeServ.URL+"/", strings.NewReader(string(body)))
 			if err != nil {
 				t.Fatal(err)
