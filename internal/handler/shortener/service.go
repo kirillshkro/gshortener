@@ -6,52 +6,93 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
-	"github.com/gorilla/mux"
+	"github.com/kirillshkro/gshortener/internal/repository/storage"
+	"github.com/kirillshkro/gshortener/internal/types"
 )
 
-type URLString = string
+type Service struct {
+	ServAddr   types.RawURL
+	ResultAddr types.ShortURL
+	Stor       *storage.Storage
+}
 
-var urls map[URLString]string = make(map[URLString]string)
+type IService interface {
+	URLEncode(resp http.ResponseWriter, req *http.Request)
+	URLDecode(resp http.ResponseWriter, req *http.Request)
+}
+
+// Создает сервис со значениями по умолчанию
+func NewService() *Service {
+	return &Service{
+		ServAddr:   types.RawURL("localhost:8080"),
+		ResultAddr: types.ShortURL("localhost:8080"),
+		Stor:       storage.NewStorage(),
+	}
+}
+
+// Создает сервис с заданным IP-адресом и портом
+func NewServiceWithAddr(addr types.RawURL) *Service {
+	return &Service{
+		ServAddr:   addr,
+		ResultAddr: types.ShortURL("localhost:8080"),
+		Stor:       storage.NewStorage(),
+	}
+}
+
+// Создает сервис с заданными IP-адресом и портом, и URL сокращенных ссылок
+func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.ShortURL) *Service {
+	return &Service{
+		ServAddr:   addr,
+		ResultAddr: shortAddr,
+		Stor:       storage.NewStorage(),
+	}
+}
 
 // Принимает на вход URL, возвращает базовый URL сервиса + хэш исходного URL
-func URLEncode(resp http.ResponseWriter, req *http.Request) {
-	const baseURL = "http://localhost:8080/"
+func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	baseURL := string(s.ResultAddr)
 	defer req.Body.Close()
 	bodyReq, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Println("cannot read request: ", err.Error())
 	}
-	log.Println("body = ", string(bodyReq))
 	resp.Header().Set("Content-Type", "text/plain")
 	resp.WriteHeader(http.StatusCreated)
-	hashed := sha1.Sum(bodyReq)
-	shorthed := hashed[:6]
-	content := hex.EncodeToString(shorthed)
-	log.Println("shorted: ", content)
-	outData := baseURL + content
-	//resp.Header().Set("Content-Type", "text/plain")
-	if _, ok := urls[content]; !ok {
-		urls[content] = string(bodyReq)
-	}
+	content := Hashing(bodyReq)
+	outData := baseURL + "/" + content
+	s.Stor.SetData(types.ShortURL(content), types.RawURL(bodyReq))
 	if _, err = resp.Write([]byte(outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
 	}
 }
 
-func URLDecode(resp http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	id := vars["id"]
+// Принимает на вход сокращенный URL,
+// возвращает исходный
+func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	pattern := id
-	original := urls[pattern]
-	resp.Header().Set("Location", original)
+	path := req.URL.Path
+	id := strings.TrimPrefix(path, "/")
+	if id == "" {
+		resp.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	location := s.Stor.Data(types.ShortURL(id))
+	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func Hashing(data []byte) string {
+	hashed := sha1.Sum(data)
+	shorthed := hashed[:6]
+	content := hex.EncodeToString(shorthed)
+	return content
 }

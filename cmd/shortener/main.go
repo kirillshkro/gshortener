@@ -1,59 +1,33 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/kirillshkro/gshortener/internal/config"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener"
+	"github.com/kirillshkro/gshortener/internal/types"
 )
 
+var cfg *config.Config
+
 func main() {
+	parseFlags()
+	service := shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(cfg.Address), types.ShortURL(cfg.ShortedURL))
 	mux := mux.NewRouter()
 	//Добавляем хандлеры
-	mux.HandleFunc("/", shortener.URLEncode)
-	mux.HandleFunc("/{id}", shortener.URLDecode).Methods("GET")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	mux.HandleFunc("/", service.URLEncode).Methods(http.MethodPost)
+	mux.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet)
+	if err := http.ListenAndServe(cfg.Address, mux); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
 	}
-	/*// контейнер данных для запроса
-	data := url.Values{}
-	// приглашение в консоли
-	fmt.Println("Введите длинный URL")
-	// открываем потоковое чтение из консоли
-	reader := bufio.NewReader(os.Stdin)
-	// читаем строку из консоли
-	long, err := reader.ReadString('\n')
-	if err != nil {
-		panic(err)
-	}
-	long = strings.TrimSuffix(long, "\n")
-	// заполняем контейнер данными
-	data.Set("url", long)
-	// добавляем HTTP-клиент
-	client := &http.Client{}
-	// пишем запрос
-	// запрос методом POST должен, помимо заголовков, содержать тело
-	// тело должно быть источником потокового чтения io.Reader
-	request, err := http.NewRequest(http.MethodPost, endpoint, strings.NewReader(data.Encode()))
-	if err != nil {
-		panic(err)
-	}
-	// в заголовках запроса указываем кодировку
-	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	// отправляем запрос и получаем ответ
-	response, err := client.Do(request)
-	if err != nil {
-		panic(err)
-	}
-	// выводим код ответа
-	fmt.Println("Статус-код ", response.Status)
-	defer response.Body.Close()
-	// читаем поток из тела ответа
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		panic(err)
-	}
-	// и печатаем его
-	fmt.Println(string(body))*/
+}
+
+func parseFlags() {
+	cfg = config.NewConfig()
+	flag.StringVar(&cfg.Address, "a", cfg.Address, "Set base host address service")
+	flag.StringVar(&cfg.ShortedURL, "b", cfg.ShortedURL, "Set base shorted url")
+	flag.Parse()
 }
