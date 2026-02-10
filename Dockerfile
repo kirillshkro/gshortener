@@ -10,6 +10,12 @@ RUN go build -o gshortener cmd/shortener/main.go
 
 FROM alpine:latest
 
+ENV BASE_ADDRESS=localhost:8080
+
+ENV SHORT_URL=http://localhost:8080
+
 WORKDIR /usr/local/bin
 
 COPY --from=builder /usr/local/src/gshortener /usr/local/bin/gshortener
+
+ENTRYPOINT [ "/usr/local/bin/gshortener" ]
