@@ -12,22 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	service  *Service
-	router   *mux.Router
-	fakeServ *httptest.Server
-)
-
-func setup() {
-	router = mux.NewRouter()
-	fakeServ = httptest.NewServer(router)
-	service = NewServiceWithAddrWithAddrShortener(types.RawURL(fakeServ.URL), types.ShortURL(fakeServ.URL))
-	router.HandleFunc("/", service.URLEncode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
-	router.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
-}
-
 func Test_URLEncode(t *testing.T) {
-	setup()
 	const testData = "https://practicum.yandex.ru"
 	tests := []struct {
 		name   string
@@ -67,6 +52,7 @@ func Test_URLEncode(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			_, fakeServ := setup()
 			body, err := json.Marshal(test.uri)
 			if err != nil {
 				t.Fatal(err)
@@ -89,9 +75,9 @@ func Test_URLEncode(t *testing.T) {
 }
 
 func Test_URLDecode(t *testing.T) {
-	setup()
 	const testURL = `https://practicum.yandex.ru`
 	id := Hashing([]byte(testURL))
+	service, fakeServ := setup()
 	service.Stor.SetData(types.ShortURL(id), types.RawURL(testURL))
 	tests := []struct {
 		name   string
@@ -127,6 +113,7 @@ func Test_URLDecode(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer fakeServ.Close()
 			req, err := http.NewRequest(test.method, fakeServ.URL+"/"+string(id), nil)
 			if err != nil {
 				t.Fatal(err)
@@ -142,5 +129,13 @@ func Test_URLDecode(t *testing.T) {
 			}
 		})
 	}
-	fakeServ.Close()
+}
+
+func setup() (*Service, *httptest.Server) {
+	router := mux.NewRouter()
+	fakeServ := httptest.NewServer(router)
+	service := NewServiceWithAddrWithAddrShortener(types.RawURL(fakeServ.URL), types.ShortURL(fakeServ.URL))
+	router.HandleFunc("/", service.URLEncode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
+	router.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
+	return service, fakeServ
 }
