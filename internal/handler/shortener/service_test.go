@@ -14,11 +14,13 @@ import (
 
 var (
 	service  *Service
-	router   *mux.Router      = mux.NewRouter()
-	fakeServ *httptest.Server = httptest.NewServer(router)
+	router   *mux.Router
+	fakeServ *httptest.Server
 )
 
 func setup() {
+	router = mux.NewRouter()
+	fakeServ = httptest.NewServer(router)
 	service = NewServiceWithAddrWithAddrShortener(types.RawURL(fakeServ.URL), types.ShortURL(fakeServ.URL))
 	router.HandleFunc("/", service.URLEncode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
 	router.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
