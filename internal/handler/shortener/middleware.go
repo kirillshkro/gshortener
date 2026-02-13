@@ -46,3 +46,11 @@ func (w *respWriter) WriteHeader(statusCode int) {
 	w.statusCode = statusCode
 	w.ResponseWriter.WriteHeader(statusCode)
 }
+
+func EncodeHandler(s IService) http.Handler {
+	return http.HandlerFunc(s.URLEncode)
+}
+
+func DecodeHandler(s IService) http.Handler {
+	return http.HandlerFunc(s.URLDecode)
+}
