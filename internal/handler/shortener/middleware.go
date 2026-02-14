@@ -54,3 +54,7 @@ func EncodeHandler(s IService) http.Handler {
 func DecodeHandler(s IService) http.Handler {
 	return http.HandlerFunc(s.URLDecode)
 }
+
+func JSONEncodeHandler(s JSONEncoder) http.Handler {
+	return http.HandlerFunc(s.JSONEncode)
+}
