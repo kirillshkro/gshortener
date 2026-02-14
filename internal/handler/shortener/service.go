@@ -57,7 +57,6 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	baseURL := string(s.ResultAddr)
-	defer req.Body.Close()
 	bodyReq, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Println("cannot read request: ", err.Error())
