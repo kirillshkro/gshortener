@@ -17,13 +17,13 @@ func Test_CreateShortURL(t *testing.T) {
 		mockResp bytes.Buffer
 		mockReq  RequestData
 	)
-	testUrl := types.RawURL("https://practicum.yandex.ru")
-	mockReq.URL = string(testUrl)
+	testURL := types.RawURL("https://practicum.yandex.ru")
+	mockReq.URL = string(testURL)
 	testBody, err := json.Marshal(mockReq)
 	if err != nil {
 		t.Fatal(err)
 	}
-	id := Hashing([]byte(testUrl))
+	id := Hashing([]byte(testURL))
 	service, server := setup()
 	defer server.Close()
 	shortedURL := server.URL + "/" + string(id)
