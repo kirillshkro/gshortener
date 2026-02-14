@@ -55,6 +55,6 @@ func DecodeHandler(s IService) http.Handler {
 	return http.HandlerFunc(s.URLDecode)
 }
 
-func JSONEncodeHandler(s JSONEncoder) http.Handler {
-	return http.HandlerFunc(s.JSONEncode)
+func CreateShortURLHandler(s JSONEncoder) http.Handler {
+	return http.HandlerFunc(s.CreateShortURL)
 }
