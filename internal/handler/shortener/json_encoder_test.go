@@ -53,7 +53,7 @@ func Test_CreateShortURL(t *testing.T) {
 		},
 		{
 			name:   "Wrong GET request",
-			method: http.MethodPost,
+			method: http.MethodGet,
 			body:   []byte(""),
 			status: http.StatusBadRequest,
 		},
