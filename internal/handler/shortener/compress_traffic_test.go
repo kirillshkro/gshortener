@@ -81,8 +81,7 @@ func Test_HandlerWithCompress(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Less(t, len(compressedBody), actualSize, "Compressed body should be smaller than original")
-			t.Logf("Original size %d bytes, compressed size %d bytes", actualSize, len(compressedBody))
+			assert.Less(t, len(compressedBody), actualSize, "Compressed body should be smaller than original\n")
 		})
 	}
 }
