@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -46,7 +45,7 @@ func Test_HandlerWithCompress(t *testing.T) {
 	}
 
 	testData := RequestData{
-		URL: genContent("https://weather.yandex.ru"),
+		URL: "https://weather.yandex.ru/фикфлфвфик/abrakadabra/zxcvbnmnmmfghjjk/asdfklllllllllllllllllllllllllllllll",
 	}
 
 	if err := json.NewEncoder(&testBuffer).Encode(testData); err != nil {
@@ -95,15 +94,4 @@ func (s *TestCompressSuite) setUp() {
 
 func (s *TestCompressSuite) tearDown() {
 	s.server.Close()
-}
-
-func genContent(str string) string {
-	var (
-		sb strings.Builder
-	)
-
-	for range 1000 {
-		sb.WriteString(str)
-	}
-	return sb.String()
 }
