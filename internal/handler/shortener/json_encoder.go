@@ -1,6 +1,9 @@
 package shortener
 
 import (
+	"bytes"
+	"compress/gzip"
+	"compress/zlib"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -44,4 +47,32 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
+}
+
+func bodyDecompressGzip(r http.Request) ([]byte, error) {
+	var buf bytes.Buffer
+
+	rd, err := gzip.NewReader(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := buf.ReadFrom(rd); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func bodyDecompressDeflate(r http.Request) ([]byte, error) {
+	var buf bytes.Buffer
+
+	rd, err := zlib.NewReader(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := buf.ReadFrom(rd); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
