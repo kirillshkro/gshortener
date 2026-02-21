@@ -2,6 +2,7 @@ package shortener
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -50,6 +51,12 @@ func Test_HandlerWithCompress(t *testing.T) {
 
 	if err := json.NewEncoder(&testBuffer).Encode(testData); err != nil {
 		t.Fatal(err)
+	}
+
+	w := gzip.NewWriter(&testBuffer)
+	defer w.Close()
+	if _, err := w.Write(testBuffer.Bytes()); err != nil {
+		t.Fatalf("Cannot compress because: %v\n", err)
 	}
 
 	actualSize := len(testBuffer.String())
