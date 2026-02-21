@@ -50,7 +50,10 @@ func (w *respCompressWriter) Write(b []byte) (int, error) {
 		}
 	}
 	defer wr.Close()
-	n, err = wr.Write(b)
+	if n, err = wr.Write(b); err != nil {
+		return 0, err
+	}
+
 	return n, err
 }
 
