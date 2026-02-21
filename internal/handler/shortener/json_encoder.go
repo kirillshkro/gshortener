@@ -1,11 +1,7 @@
 package shortener
 
 import (
-	"bytes"
-	"compress/gzip"
-	"compress/zlib"
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 
@@ -28,38 +24,13 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	var (
 		data     RequestData
 		respData ResponseData
-		rBody    bytes.Buffer
 		err      error
-		buf      *bytes.Buffer
 	)
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	//Check request header
-	compressed := req.Header.Get("Content-Encoding")
-	switch compressed {
-	case "gzip":
-		if rBody, err = bodyDecompressGzip(req); err != nil {
-			log.Fatalln(err)
-		}
-		if _, err = io.Copy(buf, &rBody); err != nil {
-			log.Fatalln(err)
-		}
-	case "deflate":
-		if rBody, err = bodyDecompressDeflate(req); err != nil {
-			log.Fatalln(err)
-		}
-		if _, err = io.Copy(buf, &rBody); err != nil {
-			log.Fatalln(err)
-		}
-	default:
-		if _, err = io.Copy(buf, req.Body); err != nil {
-			log.Fatalln(err)
-		}
-	}
-
-	if err := json.NewDecoder(buf).Decode(&data); err != nil {
+	if err = json.NewDecoder(req.Body).Decode(&data); err != nil {
 		log.Println("cannot decode request: ", err.Error())
 		resp.WriteHeader(http.StatusBadRequest)
 		return
@@ -74,34 +45,4 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-}
-
-func bodyDecompressGzip(r *http.Request) (bytes.Buffer, error) {
-	var buf bytes.Buffer
-
-	rd, err := gzip.NewReader(r.Body)
-	if err != nil {
-		return bytes.Buffer{}, err
-	}
-	defer rd.Close()
-
-	if _, err := buf.ReadFrom(rd); err != nil {
-		return bytes.Buffer{}, err
-	}
-	return buf, nil
-}
-
-func bodyDecompressDeflate(r *http.Request) (bytes.Buffer, error) {
-	var buf bytes.Buffer
-
-	rd, err := zlib.NewReader(r.Body)
-	if err != nil {
-		return bytes.Buffer{}, err
-	}
-	defer rd.Close()
-
-	if _, err := buf.ReadFrom(rd); err != nil {
-		return bytes.Buffer{}, err
-	}
-	return buf, nil
 }
