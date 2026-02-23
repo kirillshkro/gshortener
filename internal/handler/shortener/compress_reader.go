@@ -10,7 +10,7 @@ import (
 type compReader struct {
 	r        io.ReadCloser
 	compType string
-	zr       *io.ReadCloser
+	zr       io.ReadCloser
 }
 
 func newCompReader(r io.ReadCloser, compType string) (*compReader, error) {
@@ -35,6 +35,10 @@ func newCompReader(r io.ReadCloser, compType string) (*compReader, error) {
 
 	return &compReader{
 		r:  r,
-		zr: &zr,
+		zr: zr,
 	}, nil
+}
+
+func (c compReader) Read(b []byte) (n int, err error) {
+	return c.zr.Read(b)
 }
