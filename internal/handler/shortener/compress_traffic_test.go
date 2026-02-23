@@ -72,7 +72,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, ts.server.URL+"/api/shorten", bytes.NewReader(outBuf.Bytes()))
+			req := httptest.NewRequest(http.MethodPost, ts.server.URL+"/api/shorten", &outBuf)
 			req.Header.Set("Content-Encoding", test.compMethod)
 			req.Header.Set("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
