@@ -40,7 +40,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 		{
 			name:             "Compress with gzip",
 			compMethod:       "gzip",
-			expectedResponse: "Accept-Encoding: gzip",
+			expectedResponse: "Content-Encoding: gzip",
 		},
 	}
 	testBuffer := make([]byte, 0)
@@ -73,7 +73,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, ts.server.URL+"/api/shorten", &outBuf)
-			req.Header.Set("Content-Encoding", test.compMethod)
+			req.Header.Set("Accept-Encoding", test.compMethod)
 			req.Header.Set("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
 
@@ -92,7 +92,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 
 			outBuf := string(testBuffer)
 			assert.Equal(t, http.StatusCreated, resp.StatusCode)
-			assert.Equal(t, test.compMethod, resp.Header.Get("Accept-Encoding"))
+			assert.Equal(t, test.compMethod, resp.Header.Get("Content-Encoding"))
 			assert.Equal(t, testStr, outBuf)
 		})
 	}
