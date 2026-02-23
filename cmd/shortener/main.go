@@ -21,7 +21,7 @@ func main() {
 	mux.Handle("/", shortener.HandlerWithCompress(
 		shortener.HandlerWithLog(
 			shortener.EncodeHandler(service)))).Methods(http.MethodPost)
-	mux.Handle("/{id}", shortener.HandlerWithLog(shortener.DecodeHandler(service))).Methods(http.MethodGet)
+	mux.Handle("/{id}", shortener.HandlerWithCompress(shortener.HandlerWithLog(shortener.DecodeHandler(service)))).Methods(http.MethodGet)
 	mux.Handle("/api/shorten", shortener.HandlerWithCompress(
 		shortener.HandlerWithLog(shortener.CreateShortURLHandler(service)))).Methods(http.MethodPost)
 	if err := http.ListenAndServe(cfg.Address, mux); err != nil {
