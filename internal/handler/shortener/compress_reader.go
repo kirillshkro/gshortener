@@ -13,8 +13,6 @@ type compReader struct {
 	zr       io.ReadCloser
 }
 
-var ErrUknokwnCompType = errors.New("unknown compression format")
-
 func newCompReader(r io.ReadCloser, compType string) (*compReader, error) {
 	var (
 		zr  io.ReadCloser
@@ -32,7 +30,7 @@ func newCompReader(r io.ReadCloser, compType string) (*compReader, error) {
 			return nil, err
 		}
 	default:
-		return nil, ErrUknokwnCompType
+		return nil, errors.New("bad format")
 	}
 
 	return &compReader{
