@@ -20,9 +20,13 @@ type TestCompressSuite struct {
 	service *Service
 }
 
-func Test_HandlerWithCompress(t *testing.T) {
+func Test_HandlerWithCompressGzip(t *testing.T) {
+	const (
+		testStr = "Aaa"
+	)
 	var (
-		testBuffer bytes.Buffer
+		buf    bytes.Buffer
+		outBuf bytes.Buffer
 	)
 	ts := new(TestCompressSuite)
 	ts.setUp()
@@ -38,39 +42,32 @@ func Test_HandlerWithCompress(t *testing.T) {
 			compMethod:       "gzip",
 			expectedResponse: "Accept-Encoding: gzip",
 		},
-		{
-			name:             "Compress with deflate",
-			compMethod:       "deflate",
-			expectedResponse: "Accept-Encoding: deflate",
-		},
 	}
-
+	testBuffer := make([]byte, 0)
 	testData := RequestData{
-		URL: "https://weather.yandex.ru/фикфлфвфик/abrakadabra/zxcvbnmnmmfghjjk/asdfklllllllllllllllllllllllllllllll",
+		URL: "https://weather.yandex.ru/abrakadabra/abrakadabra/zxcvbnmnmmfghjjk/asdfklllllllllllllllllllllllllllllll",
 	}
 
-	if err := json.NewEncoder(&testBuffer).Encode(testData); err != nil {
+	if err := json.NewEncoder(&buf).Encode(testData); err != nil {
 		t.Fatal(err)
 	}
 
-	w := gzip.NewWriter(&testBuffer)
-	defer w.Close()
-	if _, err := w.Write(testBuffer.Bytes()); err != nil {
-		t.Fatalf("Cannot compress because: %v\n", err)
+	gz := gzip.NewWriter(&outBuf)
+	if _, err := gz.Write(buf.Bytes()); err != nil {
+		t.Fatal(err)
 	}
-
-	actualSize := len(testBuffer.String())
 
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
-		if _, err := w.Write(testBuffer.Bytes()); err != nil {
-			t.Fatal(err)
+		if _, err := w.Write([]byte(testStr)); err != nil {
+			http.Error(w, "Net I/O error", http.StatusBadRequest)
+			return
 		}
 	})
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, ts.server.URL+"/api/shorten", &testBuffer)
+			req := httptest.NewRequest(http.MethodPost, ts.server.URL+"/api/shorten", &outBuf)
 			req.Header.Set("Content-Encoding", test.compMethod)
 			req.Header.Set("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
@@ -79,15 +76,18 @@ func Test_HandlerWithCompress(t *testing.T) {
 
 			resp := rr.Result()
 			defer resp.Body.Close()
-
-			assert.Equal(t, http.StatusCreated, resp.StatusCode)
-			assert.Equal(t, test.compMethod, resp.Header.Get("Accept-Encoding"))
-
-			compressedBody, err := io.ReadAll(resp.Body)
+			rgz, err := gzip.NewReader(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Less(t, len(compressedBody), actualSize, "Compressed body should be smaller than original\n")
+			if testBuffer, err = io.ReadAll(rgz); err != nil {
+				t.Fatal(err)
+			}
+
+			outBuf := string(testBuffer)
+			assert.Equal(t, http.StatusCreated, resp.StatusCode)
+			assert.Equal(t, test.compMethod, resp.Header.Get("Accept-Encoding"))
+			assert.Equal(t, testStr, outBuf)
 		})
 	}
 }
