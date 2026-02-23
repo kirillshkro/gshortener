@@ -34,11 +34,19 @@ func newCompReader(r io.ReadCloser, compType string) (*compReader, error) {
 	}
 
 	return &compReader{
-		r:  r,
-		zr: zr,
+		r:        r,
+		compType: compType,
+		zr:       zr,
 	}, nil
 }
 
 func (c compReader) Read(b []byte) (n int, err error) {
 	return c.zr.Read(b)
+}
+
+func (c *compReader) Close() error {
+	if err := c.r.Close(); err != nil {
+		return err
+	}
+	return c.zr.Close()
 }
