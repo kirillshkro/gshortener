@@ -1,7 +1,6 @@
 package shortener
 
 import (
-	"bytes"
 	"compress/gzip"
 	"compress/zlib"
 	"io"
@@ -24,14 +23,8 @@ func HandlerWithCompress(next http.Handler) http.Handler {
 					http.Error(w, "Internal error", http.StatusBadRequest)
 					return
 				}
-				outBuf := make([]byte, 0)
+				r.Body = compReader
 				defer compReader.Close()
-				if _, err := compReader.Read(outBuf); err != nil {
-					http.Error(w, "Internal unpack error", http.StatusBadRequest)
-					return
-				}
-				reqBuf := io.NopCloser(bytes.NewReader(outBuf))
-				r.Body = reqBuf
 				next.ServeHTTP(newRespCompressWriter(w, compEncoding), r)
 			} else {
 				next.ServeHTTP(w, r)

@@ -56,7 +56,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 	if _, err := gz.Write(buf.Bytes()); err != nil {
 		t.Fatal(err)
 	}
-
+	gz.Close()
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var rData RequestData
 		w.WriteHeader(http.StatusCreated)
@@ -85,6 +85,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			defer rgz.Close()
 			if testBuffer, err = io.ReadAll(rgz); err != nil {
 				t.Fatal(err)
 			}
