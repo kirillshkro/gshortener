@@ -45,7 +45,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 	}
 	testBuffer := make([]byte, 0)
 	testData := RequestData{
-		URL: "https://weather.yandex.ru/abrakadabra/abrakadabra/zxcvbnmnmmfghjjk/asdfklllllllllllllllllllllllllllllll",
+		URL: "https://weather.yandex.ru/",
 	}
 
 	if err := json.NewEncoder(&buf).Encode(testData); err != nil {
@@ -58,7 +58,12 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 	}
 
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var rData RequestData
 		w.WriteHeader(http.StatusCreated)
+		if err := json.NewDecoder(r.Body).Decode(&rData); err != nil {
+			http.Error(w, "JSON unpack error", http.StatusLengthRequired)
+			return
+		}
 		if _, err := w.Write([]byte(testStr)); err != nil {
 			http.Error(w, "Net I/O error", http.StatusBadRequest)
 			return
@@ -67,7 +72,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, ts.server.URL+"/api/shorten", &outBuf)
+			req := httptest.NewRequest(http.MethodPost, ts.server.URL+"/api/shorten", bytes.NewReader(outBuf.Bytes()))
 			req.Header.Set("Content-Encoding", test.compMethod)
 			req.Header.Set("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
