@@ -1,6 +1,7 @@
 package shortener
 
 import (
+	"bytes"
 	"compress/gzip"
 	"compress/zlib"
 	"io"
@@ -16,14 +17,23 @@ func HandlerWithCompress(next http.Handler) http.Handler {
 	compressFn := func(w http.ResponseWriter, r *http.Request) {
 		if isCompContent(r) {
 			compEncoding := r.Header.Get("Content-Encoding")
-			switch compEncoding {
-			case "gzip":
-				w.Header().Set("Accept-Encoding", "gzip")
+			if compEncoding == "gzip" || compEncoding == "deflate" {
+				w.Header().Set("Accept-Encoding", compEncoding)
+				compReader, err := newCompReader(r.Body, compEncoding)
+				if err != nil {
+					http.Error(w, "Internal error", http.StatusBadRequest)
+					return
+				}
+				outBuf := make([]byte, 0)
+				defer compReader.Close()
+				if _, err := compReader.Read(outBuf); err != nil {
+					http.Error(w, "Internal unpack error", http.StatusBadRequest)
+					return
+				}
+				reqBuf := io.NopCloser(bytes.NewReader(outBuf))
+				r.Body = reqBuf
 				next.ServeHTTP(newRespCompressWriter(w, compEncoding), r)
-			case "deflate":
-				w.Header().Set("Accept-Encoding", "deflate")
-				next.ServeHTTP(newRespCompressWriter(w, compEncoding), r)
-			default:
+			} else {
 				next.ServeHTTP(w, r)
 			}
 		}
