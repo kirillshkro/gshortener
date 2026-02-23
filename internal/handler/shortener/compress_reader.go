@@ -30,7 +30,7 @@ func newCompReader(r io.ReadCloser, compType string) (*compReader, error) {
 			return nil, err
 		}
 	default:
-		return nil, errors.New("Unknown compression format")
+		return nil, errors.New("unknown compression format")
 	}
 
 	return &compReader{
