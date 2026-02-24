@@ -15,10 +15,11 @@ type respCompressWriter struct {
 func HandlerWithCompress(next http.Handler) http.Handler {
 	compressFn := func(w http.ResponseWriter, r *http.Request) {
 		if isCompContent(r) {
-			compEncoding := r.Header.Get("Content-Encoding")
+			var rBody io.ReadCloser
+			compEncoding := r.Header.Get("Accept-Encoding")
 			if compEncoding == "gzip" || compEncoding == "deflate" {
-				w.Header().Set("Accept-Encoding", compEncoding)
-				compReader, err := newCompReader(r.Body, compEncoding)
+				rBody = r.Body
+				compReader, err := newCompReader(rBody, compEncoding)
 				if err != nil {
 					http.Error(w, "Internal error", http.StatusBadRequest)
 					return
@@ -62,7 +63,7 @@ func (w *respCompressWriter) Write(b []byte) (int, error) {
 
 func (w *respCompressWriter) WriteHeader(statusCode int) {
 	if statusCode == http.StatusCreated {
-		w.Header().Set("Accept-Encoding", w.EncodingType)
+		w.Header().Set("Content-Encoding", w.EncodingType)
 	}
 	w.ResponseWriter.WriteHeader(statusCode)
 }
