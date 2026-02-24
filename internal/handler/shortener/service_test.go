@@ -52,7 +52,7 @@ func Test_URLEncode(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, fakeServ := setup()
+			service, fakeServ := setup()
 			body, err := json.Marshal(test.uri)
 			if err != nil {
 				t.Fatal(err)
@@ -61,11 +61,9 @@ func Test_URLEncode(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			client := fakeServ.Client()
-			resp, err := client.Do(req)
-			if err != nil {
-				t.Fatal(err)
-			}
+			rr := httptest.NewRecorder()
+			HandlerWithCompress(HandlerWithLog(EncodeHandler(service))).ServeHTTP(rr, req)
+			resp := rr.Result()
 			defer resp.Body.Close()
 			if resp.StatusCode != test.code {
 				t.Errorf("test failed because expected code: %d, real code: %d\n", test.code, resp.StatusCode)
@@ -119,7 +117,7 @@ func Test_URLDecode(t *testing.T) {
 				t.Fatal(err)
 			}
 			rr := httptest.NewRecorder()
-			service.URLDecode(rr, req)
+			HandlerWithCompress(HandlerWithLog(DecodeHandler(service))).ServeHTTP(rr, req)
 			resp := rr.Result()
 			defer resp.Body.Close()
 			assert.Equal(t, test.status, resp.StatusCode)
