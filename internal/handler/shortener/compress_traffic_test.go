@@ -57,18 +57,6 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 		t.Fatal(err)
 	}
 	gz.Close()
-	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var rData RequestData
-		w.WriteHeader(http.StatusCreated)
-		if err := json.NewDecoder(r.Body).Decode(&rData); err != nil {
-			http.Error(w, "JSON unpack error", http.StatusLengthRequired)
-			return
-		}
-		if _, err := w.Write([]byte(testStr)); err != nil {
-			http.Error(w, "Net I/O error", http.StatusBadRequest)
-			return
-		}
-	})
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
@@ -77,7 +65,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
 
-			HandlerWithCompress(fn).ServeHTTP(rr, req)
+			HandlerWithCompress(CreateShortURLHandler(ts.service)).ServeHTTP(rr, req)
 
 			resp := rr.Result()
 			defer resp.Body.Close()
