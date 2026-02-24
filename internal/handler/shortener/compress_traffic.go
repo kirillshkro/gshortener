@@ -74,7 +74,7 @@ func newRespCompressWriter(resp http.ResponseWriter, compType string) *respCompr
 
 func isCompContent(r *http.Request) bool {
 	cType := r.Header.Get("Content-Type")
-	if cType == "text/plain" || cType == "text/html" || cType == "application/json" {
+	if cType == "text/html" || cType == "application/json" {
 		return true
 	}
 	return false
