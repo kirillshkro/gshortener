@@ -21,12 +21,12 @@ type TestCompressSuite struct {
 }
 
 func Test_HandlerWithCompressGzip(t *testing.T) {
-	const (
-		testStr = "Aaa"
-	)
 	var (
-		buf    bytes.Buffer
-		outBuf bytes.Buffer
+		buf        []byte
+		outBuf     bytes.Buffer
+		mockResp   bytes.Buffer
+		err        error
+		testBuffer []byte
 	)
 	ts := new(TestCompressSuite)
 	ts.setUp()
@@ -43,17 +43,29 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 			expectedResponse: "Content-Encoding: gzip",
 		},
 	}
-	testBuffer := make([]byte, 0)
-	testData := RequestData{
-		URL: "https://weather.yandex.ru/",
+	testUrl := types.RawURL("https://weather.yandex.ru")
+	id := Hashing([]byte(testUrl))
+	shortedUrl := types.ShortURL(ts.server.URL + "/" + id)
+
+	testResp := ResponseData{
+		Result: string(shortedUrl),
 	}
 
-	if err := json.NewEncoder(&buf).Encode(testData); err != nil {
+	if err = json.NewEncoder(&mockResp).Encode(testResp); err != nil {
+		t.Fatal(err)
+	}
+
+	testData := RequestData{
+		URL: string(testUrl),
+	}
+
+	buf, err = json.Marshal(testData)
+	if err != nil {
 		t.Fatal(err)
 	}
 
 	gz := gzip.NewWriter(&outBuf)
-	if _, err := gz.Write(buf.Bytes()); err != nil {
+	if _, err := gz.Write(buf); err != nil {
 		t.Fatal(err)
 	}
 	gz.Close()
@@ -78,10 +90,9 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			outBuf := string(testBuffer)
 			assert.Equal(t, http.StatusCreated, resp.StatusCode)
 			assert.Equal(t, test.compMethod, resp.Header.Get("Content-Encoding"))
-			assert.Equal(t, testStr, outBuf)
+			assert.JSONEq(t, mockResp.String(), string(testBuffer))
 		})
 	}
 }
@@ -89,7 +100,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 func (s *TestCompressSuite) setUp() {
 	s.router = mux.NewRouter()
 	s.server = httptest.NewServer(s.router)
-	s.service = NewServiceWithAddrWithAddrShortener(types.RawURL("http://localhost:8080"), types.ShortURL("http://localhost:8080"))
+	s.service = NewServiceWithAddrWithAddrShortener(types.RawURL(s.server.URL), types.ShortURL(s.server.URL))
 	s.router.HandleFunc("/api/shorten", s.service.CreateShortURL).Methods(http.MethodPost)
 }
 
