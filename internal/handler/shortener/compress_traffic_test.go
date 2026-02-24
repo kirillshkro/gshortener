@@ -43,12 +43,12 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 			expectedResponse: "Content-Encoding: gzip",
 		},
 	}
-	testUrl := types.RawURL("https://weather.yandex.ru")
-	id := Hashing([]byte(testUrl))
-	shortedUrl := types.ShortURL(ts.server.URL + "/" + id)
+	testURL := types.RawURL("https://weather.yandex.ru")
+	id := Hashing([]byte(testURL))
+	shortedURL := types.ShortURL(ts.server.URL + "/" + id)
 
 	testResp := ResponseData{
-		Result: string(shortedUrl),
+		Result: string(shortedURL),
 	}
 
 	if err = json.NewEncoder(&mockResp).Encode(testResp); err != nil {
@@ -56,7 +56,7 @@ func Test_HandlerWithCompressGzip(t *testing.T) {
 	}
 
 	testData := RequestData{
-		URL: string(testUrl),
+		URL: string(testURL),
 	}
 
 	buf, err = json.Marshal(testData)
