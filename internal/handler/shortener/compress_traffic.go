@@ -5,6 +5,7 @@ import (
 	"compress/zlib"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type respCompressWriter struct {
@@ -73,9 +74,18 @@ func newRespCompressWriter(resp http.ResponseWriter, compType string) *respCompr
 }
 
 func isCompContent(r *http.Request) bool {
-	cType := r.Header.Get("Content-Type")
-	if cType == "text/html" || cType == "application/json" {
+	if isJSON(r) || isText(r) {
 		return true
 	}
 	return false
+}
+
+func isJSON(r *http.Request) bool {
+	cType := r.Header.Get("Content-Type")
+	return strings.Contains(cType, "application/json")
+}
+
+func isText(r *http.Request) bool {
+	cType := r.Header.Get("Content-Type")
+	return strings.Contains(cType, "plain/text")
 }
