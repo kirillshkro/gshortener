@@ -36,13 +36,13 @@ func Test_HandlerWithCompressGzipPlain(t *testing.T) {
 		},
 	}
 
-	Url := "https://weather.yandex.ru"
-	if err := json.NewEncoder(&tb).Encode(Url); err != nil {
+	URL := "https://weather.yandex.ru"
+	if err := json.NewEncoder(&tb).Encode(URL); err != nil {
 		t.Fatal(err)
 	}
 	hs := Hashing(tb.Bytes())
 	extectedStr := ts.server.URL + "/" + hs
-	if err := json.NewEncoder(&buffer).Encode(Url); err != nil {
+	if err := json.NewEncoder(&buffer).Encode(URL); err != nil {
 		t.Fatal(err)
 	}
 	gz := gzip.NewWriter(&outBuf)
