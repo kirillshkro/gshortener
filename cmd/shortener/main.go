@@ -16,12 +16,13 @@ var cfg *config.Config
 func main() {
 	parseFlags()
 	service := shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(cfg.Address), types.ShortURL(cfg.ShortedURL))
-	mux := mux.NewRouter()
+	router := mux.NewRouter()
 	//Добавляем хандлеры с логгированием
-	mux.Handle("/", shortener.HandlerWithLog(shortener.EncodeHandler(service))).Methods(http.MethodPost)
-	mux.Handle("/{id}", shortener.HandlerWithLog(shortener.DecodeHandler(service))).Methods(http.MethodGet)
-	mux.Handle("/api/shorten", shortener.HandlerWithLog(shortener.CreateShortURLHandler(service))).Methods(http.MethodPost)
-	if err := http.ListenAndServe(cfg.Address, mux); err != nil {
+	router.Handle("/", shortener.HandlerWithLog(shortener.EncodeHandler(service))).Methods(http.MethodPost)
+	router.Handle("/{id}", shortener.HandlerWithLog(shortener.DecodeHandler(service))).Methods(http.MethodGet)
+	router.Handle("/api/shorten", shortener.HandlerWithLog(shortener.CreateShortURLHandler(service))).Methods(http.MethodPost)
+	router.Use(shortener.HandlerWithGzip)
+	if err := http.ListenAndServe(cfg.Address, router); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
 	}
 }
