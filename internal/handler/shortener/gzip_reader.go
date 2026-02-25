@@ -22,8 +22,8 @@ func newCompReader(r io.ReadCloser) (*compReader, error) {
 	}, nil
 }
 
-func (r *compReader) Close() error {
-	return r.zr.Close()
+func (c *compReader) Close() error {
+	return c.zr.Close()
 }
 
 func (c compReader) Read(b []byte) (n int, err error) {
