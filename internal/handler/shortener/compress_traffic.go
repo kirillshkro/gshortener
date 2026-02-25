@@ -2,7 +2,6 @@ package shortener
 
 import (
 	"compress/gzip"
-	"compress/zlib"
 	"io"
 	"net/http"
 	"strings"
@@ -10,7 +9,6 @@ import (
 
 type respCompressWriter struct {
 	http.ResponseWriter
-	EncodingType string
 }
 
 func HandlerWithCompress(next http.Handler) http.Handler {
@@ -21,16 +19,17 @@ func HandlerWithCompress(next http.Handler) http.Handler {
 		}
 		var rBody io.ReadCloser
 		compEncoding := r.Header.Get("Accept-Encoding")
-		if compEncoding == "gzip" || compEncoding == "deflate" {
+		if compEncoding == "gzip" {
 			rBody = r.Body
-			compReader, err := newCompReader(rBody, compEncoding)
+			compReader, err := newCompReader(rBody)
 			if err != nil {
 				http.Error(w, "Internal error", http.StatusBadRequest)
 				return
 			}
 			r.Body = compReader
 			defer compReader.Close()
-			next.ServeHTTP(newRespCompressWriter(w, compEncoding), r)
+			w.Header().Set("Content-Type", "application/json")
+			next.ServeHTTP(newRespCompressWriter(w), r)
 		}
 	}
 	return http.HandlerFunc(compressFn)
@@ -42,18 +41,7 @@ func (w *respCompressWriter) Write(b []byte) (int, error) {
 		err error
 		n   int
 	)
-	switch w.EncodingType {
-	case "gzip":
-		wr, err = gzip.NewWriterLevel(w.ResponseWriter, gzip.DefaultCompression)
-		if err != nil {
-			return 0, err
-		}
-	case "deflate":
-		wr, err = zlib.NewWriterLevel(w.ResponseWriter, zlib.DefaultCompression)
-		if err != nil {
-			return 0, err
-		}
-	}
+	wr = gzip.NewWriter(w.ResponseWriter)
 	defer wr.Close()
 	if n, err = wr.Write(b); err != nil {
 		return 0, err
@@ -64,13 +52,13 @@ func (w *respCompressWriter) Write(b []byte) (int, error) {
 
 func (w *respCompressWriter) WriteHeader(statusCode int) {
 	if statusCode == http.StatusCreated {
-		w.Header().Set("Content-Encoding", w.EncodingType)
+		w.Header().Set("Content-Encoding", "gzip")
 	}
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
-func newRespCompressWriter(resp http.ResponseWriter, compType string) *respCompressWriter {
-	return &respCompressWriter{resp, compType}
+func newRespCompressWriter(resp http.ResponseWriter) *respCompressWriter {
+	return &respCompressWriter{resp}
 }
 
 func isCompContent(r *http.Request) bool {
