@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func HandlerWithGzip(next http.HandlerFunc) http.HandlerFunc {
+func HandlerWithGzip(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		zw := w
 		isCompressed := r.Header.Get("Accept-Encoding")
