@@ -4,3 +4,5 @@ package types
 
 type RawURL string
 type ShortURL string
+
+type TStor []map[ShortURL]RawURL
