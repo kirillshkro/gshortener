@@ -2,9 +2,22 @@ package config
 
 import (
 	"os"
+	"sync"
 )
 
-//Конфиг программы. В будущем возможна загрузка из файла или переменных окружения
+var (
+	instance *Config
+	once     sync.Once
+)
+
+func GetConfig() *Config {
+	once.Do(func() {
+		instance = newConfig()
+	})
+	return instance
+}
+
+//Конфиг программы.
 
 type Config struct {
 	Address    string `json:"address"`
@@ -12,7 +25,7 @@ type Config struct {
 	FileDb     string `json:"file_db"`
 }
 
-func NewConfig() *Config {
+func newConfig() *Config {
 	var (
 		baseAddress     string
 		shorted         string

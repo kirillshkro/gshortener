@@ -30,7 +30,7 @@ func main() {
 }
 
 func parseFlags() {
-	cfg = config.NewConfig()
+	cfg = config.GetConfig()
 	flag.StringVar(&cfg.Address, "a", cfg.Address, "Set base host address service")
 	flag.StringVar(&cfg.ShortedURL, "b", cfg.ShortedURL, "Set base shorted url")
 	flag.StringVar(&cfg.FileDb, "f", cfg.FileDb, "Set path to database")
