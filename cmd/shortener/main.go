@@ -17,10 +17,12 @@ func main() {
 	parseFlags()
 	service := shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(cfg.Address), types.ShortURL(cfg.ShortedURL))
 	router := mux.NewRouter()
+	router.Handle("/", shortener.EncodeHandler(service)).Methods(http.MethodPost)
+	router.Handle("/{id}", shortener.DecodeHandler(service)).Methods(http.MethodGet)
+	router.Handle("/api/shorten", shortener.CreateShortURLHandler(service)).Methods(http.MethodPost)
 	//Добавляем хандлеры с логгированием
-	router.Handle("/", shortener.HandlerWithLog(shortener.EncodeHandler(service))).Methods(http.MethodPost)
-	router.Handle("/{id}", shortener.HandlerWithLog(shortener.DecodeHandler(service))).Methods(http.MethodGet)
-	router.Handle("/api/shorten", shortener.HandlerWithLog(shortener.CreateShortURLHandler(service))).Methods(http.MethodPost)
+	router.Use(shortener.HandlerWithLog)
+	//Добавляем хандлеры с сжатием траффика
 	router.Use(shortener.HandlerWithGzip)
 	if err := http.ListenAndServe(cfg.Address, router); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
