@@ -5,4 +5,10 @@ package types
 type RawURL string
 type ShortURL string
 
-type TStor []map[ShortURL]RawURL
+type FileData struct {
+	UUID        uint     `json:"uuid"`
+	ShortURL    ShortURL `json:"short_url"`
+	OriginalURL RawURL   `json:"original_url"`
+}
+
+type TStor []FileData
