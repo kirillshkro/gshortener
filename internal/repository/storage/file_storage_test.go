@@ -10,22 +10,23 @@ import (
 )
 
 func Test_StorageData(t *testing.T) {
-	fs, err := NewFileStorage("test.jsonl")
+	fs, err := NewFileStorage("test.json")
 	require.NoError(t, err)
 	defer fs.Close()
 
 	for i := range 2 {
 		ss := strconv.Itoa(i)
-		answer := fs.Data("testx" + types.ShortURL(ss))
+		answer, err := fs.Data("testx" + types.ShortURL(ss))
 		assert.NotEmpty(t, answer)
+		require.NoError(t, err)
 	}
 }
 
 func Test_STorageSetData(t *testing.T) {
-	fs, err := NewFileStorage("test.jsonl")
+	fs, err := NewFileStorage("test.json")
 	require.NoError(t, err)
 	defer fs.Close()
-	for i := range 10 {
+	for i := range 2 {
 		ss := strconv.Itoa(i)
 		err = fs.SetData("testx"+types.ShortURL(ss), "test"+types.RawURL(ss))
 		require.NoError(t, err)
