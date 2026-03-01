@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -118,11 +119,27 @@ func (f *FileStorage) SetData(key types.ShortURL, val types.RawURL) error {
 	return nil
 }
 
-func (f *FileStorage) Load() (counter int, err error) {
+func (f *FileStorage) GetCounter() (counter int64, err error) {
 	_, err = f.file.Stat()
 	if err != nil {
 		return 0, err
 	}
+	counter = 1
+	//Перейти ко второй строке файла
+	//Первой с записью лога
+	if _, err = f.file.Seek(counter+1, io.SeekStart); err != nil {
+		return 0, err
+	}
+	reader := bufio.NewScanner(f.file)
+	for reader.Scan() {
+		counter++
+
+		if err = reader.Err(); err != nil {
+			return 0, err
+		}
+	}
+	//вычитаем последнюю строку файла из счетчика строк
+	counter -= 1
 	return
 }
 
