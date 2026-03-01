@@ -20,7 +20,20 @@ type FileStorage struct {
 	stor   types.TStor
 }
 
-func NewFileStorage(fPath string) (*FileStorage, error) {
+var (
+	instance *FileStorage
+	once     sync.Once
+)
+
+func GetFileStorage(fPath string) (*FileStorage, error) {
+	var err error
+	once.Do(func() {
+		instance, err = newFileStorage(fPath)
+	})
+	return instance, err
+}
+
+func newFileStorage(fPath string) (*FileStorage, error) {
 	file, err := os.OpenFile(fPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, err
@@ -105,6 +118,14 @@ func (f *FileStorage) SetData(key types.ShortURL, val types.RawURL) error {
 	return nil
 }
 
+func (f *FileStorage) Load() (counter int, err error) {
+	_, err = f.file.Stat()
+	if err != nil {
+		return 0, err
+	}
+	return
+}
+
 func (f *FileStorage) keyExist(key types.ShortURL) bool {
 	if _, ok := f.index[key]; ok {
 		return true
@@ -153,7 +174,8 @@ func (f *FileStorage) appendItem(item []byte) error {
 		if err != nil {
 			return err
 		}
-		// Добавляем первый объект
+
+		// Добавляем первую запись
 		_, err = f.file.Seek(0, io.SeekEnd)
 		if err != nil {
 			return err
