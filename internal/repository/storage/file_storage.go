@@ -13,7 +13,6 @@ import (
 )
 
 type FileStorage struct {
-	Storage
 	file   *os.File
 	m      sync.Mutex
 	nextID uint
@@ -41,11 +40,10 @@ func newFileStorage(fPath string) (*FileStorage, error) {
 	}
 
 	return &FileStorage{
-		Storage: *NewStorage(),
-		file:    file,
-		index:   make(map[types.ShortURL]bool),
-		nextID:  1,
-		stor:    make(types.TStor, 0),
+		file:   file,
+		index:  make(map[types.ShortURL]bool),
+		nextID: 1,
+		stor:   make(types.TStor, 0),
 	}, nil
 }
 
