@@ -22,7 +22,16 @@ type infoWriter struct {
 }
 
 func (w *infoWriter) Write(b []byte) (int, error) {
+	w.respBody = bytes.NewBuffer(b)
 	return w.ResponseWriter.Write(b)
+}
+
+func (w *infoWriter) Header() http.Header {
+	return w.ResponseWriter.Header()
+}
+
+func (w *infoWriter) WriteHeader(statusCode int) {
+	w.ResponseWriter.WriteHeader(statusCode)
 }
 
 func HandlerLogDatabase(next http.Handler) http.Handler {
@@ -50,7 +59,7 @@ func HandlerLogDatabase(next http.Handler) http.Handler {
 			return
 		}
 
-		infoWriter := newInfoWriter()
+		infoWriter := newInfoWriter(w)
 		next.ServeHTTP(infoWriter, r)
 
 		if err = json.NewDecoder(infoWriter.respBody).Decode(&respData); err != nil {
@@ -77,9 +86,9 @@ func HandlerLogDatabase(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func newInfoWriter() *infoWriter {
+func newInfoWriter(w http.ResponseWriter) *infoWriter {
 	cfg := config.GetConfig()
-	fStorage, err := storage.GetFileStorage(cfg.FileDb)
+	fStorage, err := storage.GetFileStorage(cfg.FileDB)
 	if err != nil {
 		return nil
 	}
@@ -88,9 +97,10 @@ func newInfoWriter() *infoWriter {
 		return nil
 	}
 	iw := &infoWriter{
-		respBody: &bytes.Buffer{},
-		counter:  counter,
-		fstor:    fStorage,
+		ResponseWriter: w,
+		respBody:       &bytes.Buffer{},
+		counter:        counter,
+		fstor:          fStorage,
 	}
 	return iw
 }
