@@ -22,7 +22,7 @@ func GetConfig() *Config {
 type Config struct {
 	Address    string `json:"address"`
 	ShortedURL string `json:"shorted_url"`
-	FileDb     string `json:"file_db"`
+	FileDB     string `json:"file_db"`
 }
 
 func newConfig() *Config {
@@ -48,6 +48,6 @@ func newConfig() *Config {
 	return &Config{
 		Address:    baseAddress,
 		ShortedURL: shorted,
-		FileDb:     fileStoragePath,
+		FileDB:     fileStoragePath,
 	}
 }
