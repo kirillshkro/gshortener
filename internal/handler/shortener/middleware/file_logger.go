@@ -79,7 +79,7 @@ func HandlerLogDatabase(next http.Handler) http.Handler {
 
 func newInfoWriter() *infoWriter {
 	cfg := config.GetConfig()
-	fStorage, err := storage.GetFileStorage(cfg.FileDb)
+	fStorage, err := storage.GetFileStorage(cfg.FileDB)
 	if err != nil {
 		return nil
 	}
