@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kirillshkro/gshortener/internal/config"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener"
+	"github.com/kirillshkro/gshortener/internal/handler/shortener/middleware"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
@@ -24,6 +25,9 @@ func main() {
 	router.Use(shortener.HandlerWithLog)
 	//Добавляем хандлеры с сжатием траффика
 	router.Use(shortener.HandlerWithGzip)
+	//Добавляем хандлер с записью логов в файл
+	router.Use(middleware.HandlerLogDatabase)
+
 	if err := http.ListenAndServe(cfg.Address, router); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
 	}
