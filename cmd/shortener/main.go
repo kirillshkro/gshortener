@@ -23,10 +23,10 @@ func main() {
 	router.Handle("/api/shorten", shortener.CreateShortURLHandler(service)).Methods(http.MethodPost)
 	//Добавляем хандлеры с логгированием
 	router.Use(shortener.HandlerWithLog)
-	//Добавляем хандлеры с сжатием траффика
-	router.Use(shortener.HandlerWithGzip)
 	//Добавляем хандлер с записью логов в файл
 	router.Use(middleware.HandlerLogDatabase)
+	//Добавляем хандлеры с сжатием траффика
+	router.Use(shortener.HandlerWithGzip)
 
 	if err := http.ListenAndServe(cfg.Address, router); err != nil {
 		fmt.Printf("error listen server is %s\n", err.Error())
