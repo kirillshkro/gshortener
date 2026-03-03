@@ -16,7 +16,6 @@ import (
 
 type FileLoggerSuite struct {
 	suite.Suite
-	logger *infoWriter
 	serv   *shortener.Service
 	router *mux.Router
 	server *httptest.Server
@@ -24,7 +23,6 @@ type FileLoggerSuite struct {
 
 func (s *FileLoggerSuite) SetupSuite() {
 	os.Setenv("FILE_STORAGE_PATH", "/tmp/shortener.json")
-	s.logger = newInfoWriter()
 	s.router = mux.NewRouter()
 	s.server = httptest.NewServer(s.router)
 	s.serv = shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(s.server.URL), types.ShortURL(s.server.URL))
@@ -35,7 +33,10 @@ func (s *FileLoggerSuite) TestFileLog() {
 	rData := shortener.RequestData{
 		URL: "https://weather.yandex.ru",
 	}
-	var buf bytes.Buffer
+	var (
+		buf      bytes.Buffer
+		respData shortener.ResponseData
+	)
 	if err := json.NewEncoder(&buf).Encode(rData); err != nil {
 		s.Fail(err.Error())
 	}
@@ -53,6 +54,21 @@ func (s *FileLoggerSuite) TestFileLog() {
 		s.Fail("FILE_STORAGE_PATH not found")
 	}
 	s.Assert().NotEmpty(fps)
+	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+		s.Fail(err.Error())
+	}
+	if s.NotEmpty(respData.Result) {
+		f, err := os.Open(fps)
+		if err != nil {
+			s.Fail(err.Error())
+		}
+		defer f.Close()
+		stat, err := f.Stat()
+		if err != nil {
+			s.Fail(err.Error())
+		}
+		s.Assert().Greater(stat.Size(), int64(0))
+	}
 }
 
 func (s *FileLoggerSuite) TearDownSuite() {
