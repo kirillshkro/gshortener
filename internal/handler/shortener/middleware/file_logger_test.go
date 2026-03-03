@@ -8,7 +8,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener"
+	"github.com/kirillshkro/gshortener/internal/types"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -16,24 +18,30 @@ type FileLoggerSuite struct {
 	suite.Suite
 	logger *infoWriter
 	serv   *shortener.Service
+	router *mux.Router
+	server *httptest.Server
 }
 
 func (s *FileLoggerSuite) SetupSuite() {
+	os.Setenv("FILE_STORAGE_PATH", "/tmp/shortener.json")
 	s.logger = newInfoWriter()
-	s.serv = shortener.NewService()
+	s.router = mux.NewRouter()
+	s.server = httptest.NewServer(s.router)
+	s.serv = shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(s.server.URL), types.ShortURL(s.server.URL))
+	s.router.HandleFunc("/api/shorten", s.serv.CreateShortURL).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
 }
 
 func (s *FileLoggerSuite) TestFileLog() {
 	rData := shortener.RequestData{
 		URL: "https://weather.yandex.ru",
 	}
-	buf := make([]byte, 0)
-	if err := json.NewEncoder(bytes.NewBuffer(buf)).Encode(rData); err != nil {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(rData); err != nil {
 		s.Fail(err.Error())
 	}
-	body := bytes.NewReader(buf)
+	body := bytes.NewReader(buf.Bytes())
 	rr := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/", body)
+	req := httptest.NewRequest(http.MethodPost, s.server.URL+"/api/shorten", body)
 	HandlerLogDatabase(shortener.CreateShortURLHandler(s.serv)).ServeHTTP(rr, req)
 	resp := rr.Result()
 	defer resp.Body.Close()
@@ -48,6 +56,7 @@ func (s *FileLoggerSuite) TestFileLog() {
 }
 
 func (s *FileLoggerSuite) TearDownSuite() {
+	s.server.Close()
 }
 
 func TestMain(t *testing.T) {

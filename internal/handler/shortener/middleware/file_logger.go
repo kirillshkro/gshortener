@@ -87,9 +87,10 @@ func newInfoWriter() *infoWriter {
 	if err != nil {
 		return nil
 	}
-	return &infoWriter{
+	iw := &infoWriter{
 		respBody: &bytes.Buffer{},
 		counter:  counter,
 		fstor:    fStorage,
 	}
+	return iw
 }
