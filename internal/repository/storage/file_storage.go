@@ -16,7 +16,7 @@ type FileStorage struct {
 	file   *os.File
 	m      sync.Mutex
 	nextID uint
-	index  map[types.ShortURL]bool
+	index  map[types.RawURL]bool
 	stor   types.TStor
 }
 
@@ -41,7 +41,7 @@ func newFileStorage(fPath string) (*FileStorage, error) {
 
 	return &FileStorage{
 		file:   file,
-		index:  make(map[types.ShortURL]bool),
+		index:  make(map[types.RawURL]bool),
 		nextID: 1,
 		stor:   make(types.TStor, 0),
 	}, nil
@@ -82,7 +82,7 @@ func (f *FileStorage) Data(key types.ShortURL) (types.RawURL, error) {
 /*
 Добавляет в файл пару ключ-значение
 */
-func (f *FileStorage) SetData(key types.ShortURL, val types.RawURL) error {
+func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 	var (
 		buf []byte
 		err error
@@ -100,8 +100,8 @@ func (f *FileStorage) SetData(key types.ShortURL, val types.RawURL) error {
 
 	item := types.FileData{
 		UUID:        f.nextID,
-		ShortURL:    key,
-		OriginalURL: val,
+		ShortURL:    val,
+		OriginalURL: key,
 	}
 
 	if buf, err = json.Marshal(item); err != nil {
@@ -141,7 +141,8 @@ func (f *FileStorage) GetCounter() (counter int64, err error) {
 	return
 }
 
-func (f *FileStorage) keyExist(key types.ShortURL) bool {
+func (f *FileStorage) keyExist(key types.RawURL) bool {
+	f.Load()
 	if _, ok := f.index[key]; ok {
 		return true
 	}
@@ -230,4 +231,32 @@ func (f *FileStorage) appendItem(item []byte) error {
 	_, err = f.file.WriteString(",\n  " + string(item) + "\n]\n")
 
 	return err
+}
+
+func (f *FileStorage) Load() (err error) {
+	if f.file == nil {
+		return errors.New("file not opened")
+	}
+
+	var (
+		countLines int64
+		item       types.FileData
+		content    []types.FileData
+	)
+	if countLines, err = f.GetCounter(); err != nil {
+		return err
+	}
+	if countLines == 0 {
+		return nil
+	}
+
+	if err = json.NewDecoder(f.file).Decode(&content); err != nil {
+		return
+	}
+
+	for _, item = range content {
+		f.index[item.OriginalURL] = true
+	}
+
+	return
 }

@@ -34,7 +34,7 @@ func (s *storageDataSuite) Test_StorageData() {
 func (s *storageDataSuite) Test_StorageSetData() {
 	for i := range 2 {
 		ss := strconv.Itoa(i)
-		err := s.fs.SetData("testx"+types.ShortURL(ss), "test"+types.RawURL(ss))
+		err := s.fs.SetData("test"+types.RawURL(ss), "testx"+types.ShortURL(ss))
 		s.Require().NoError(err)
 	}
 }
