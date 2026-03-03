@@ -78,7 +78,7 @@ func HandlerLogDatabase(next http.Handler) http.Handler {
 
 		atomic.AddUint64(&seq, 1)
 
-		if err = infoWriter.fstor.SetData(types.ShortURL(id), types.RawURL(rdata.URL)); err != nil {
+		if err = infoWriter.fstor.SetData(types.RawURL(rdata.URL), types.ShortURL(id)); err != nil {
 			http.Error(w, "cannot save data to file: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
