@@ -22,7 +22,7 @@ type FileLoggerSuite struct {
 }
 
 func (s *FileLoggerSuite) SetupSuite() {
-	os.Setenv("FILE_STORAGE_PATH", "/tmp/shortener.json")
+	os.Setenv("FILE_STORAGE_PATH", "./shortener.json")
 	s.router = mux.NewRouter()
 	s.server = httptest.NewServer(s.router)
 	s.serv = shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(s.server.URL), types.ShortURL(s.server.URL))
