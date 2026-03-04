@@ -6,7 +6,7 @@ type RawURL string
 type ShortURL string
 
 type FileData struct {
-	UUID        uint     `json:"uuid"`
+	UUID        int64    `json:"uuid"`
 	ShortURL    ShortURL `json:"short_url"`
 	OriginalURL RawURL   `json:"original_url"`
 }
