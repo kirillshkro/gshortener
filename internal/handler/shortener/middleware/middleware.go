@@ -1,4 +1,4 @@
-package shortener
+package middleware
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/kirillshkro/gshortener/internal/handler/shortener"
 	"github.com/rs/zerolog"
 )
 
@@ -47,14 +48,14 @@ func (w *respWriter) WriteHeader(statusCode int) {
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
-func EncodeHandler(s IService) http.Handler {
+func EncodeHandler(s shortener.IService) http.Handler {
 	return http.HandlerFunc(s.URLEncode)
 }
 
-func DecodeHandler(s IService) http.Handler {
+func DecodeHandler(s shortener.IService) http.Handler {
 	return http.HandlerFunc(s.URLDecode)
 }
 
-func CreateShortURLHandler(s JSONEncoder) http.Handler {
+func CreateShortURLHandler(s shortener.JSONEncoder) http.Handler {
 	return http.HandlerFunc(s.CreateShortURL)
 }

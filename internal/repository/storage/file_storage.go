@@ -15,9 +15,9 @@ import (
 type FileStorage struct {
 	file   *os.File
 	m      sync.Mutex
-	nextID uint
+	nextID int64
 	index  map[types.RawURL]bool
-	stor   types.TStor
+	stor   map[types.RawURL]types.ShortURL
 }
 
 var (
@@ -29,6 +29,8 @@ func GetFileStorage(fPath string) (*FileStorage, error) {
 	var err error
 	once.Do(func() {
 		instance, err = newFileStorage(fPath)
+		err = instance.load()
+		instance.nextID, err = instance.GetCounter()
 	})
 	return instance, err
 }
@@ -43,7 +45,7 @@ func newFileStorage(fPath string) (*FileStorage, error) {
 		file:   file,
 		index:  make(map[types.RawURL]bool),
 		nextID: 1,
-		stor:   make(types.TStor, 0),
+		stor:   make(map[types.RawURL]types.ShortURL),
 	}, nil
 }
 
@@ -95,9 +97,8 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 	}
 
 	if f.keyExist(key) {
-		return errors.New("duplicate key")
+		return nil
 	}
-
 	item := types.FileData{
 		UUID:        f.nextID,
 		ShortURL:    val,
@@ -141,8 +142,15 @@ func (f *FileStorage) GetCounter() (counter int64, err error) {
 	return
 }
 
+func (f *FileStorage) AddRecord(r io.Reader) (err error) {
+	item := types.FileData{}
+	if err = json.NewDecoder(r).Decode(&item); err != nil {
+		return err
+	}
+	return f.SetData(item.OriginalURL, item.ShortURL)
+}
+
 func (f *FileStorage) keyExist(key types.RawURL) bool {
-	f.Load()
 	if _, ok := f.index[key]; ok {
 		return true
 	}
@@ -233,30 +241,22 @@ func (f *FileStorage) appendItem(item []byte) error {
 	return err
 }
 
-func (f *FileStorage) Load() (err error) {
+func (f *FileStorage) load() (err error) {
 	if f.file == nil {
 		return errors.New("file not opened")
 	}
 
 	var (
-		countLines int64
-		item       types.FileData
-		content    []types.FileData
+		item    types.FileData
+		content []types.FileData
 	)
-	if countLines, err = f.GetCounter(); err != nil {
-		return err
-	}
-	if countLines == 0 {
-		return nil
-	}
-
 	if err = json.NewDecoder(f.file).Decode(&content); err != nil {
 		return
 	}
 
 	for _, item = range content {
 		f.index[item.OriginalURL] = true
+		f.stor[item.OriginalURL] = item.ShortURL
 	}
-
 	return
 }

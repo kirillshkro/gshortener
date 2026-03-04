@@ -1,27 +1,20 @@
-package shortener
+package middleware
 
 import (
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/kirillshkro/gshortener/internal/handler/shortener"
+	"github.com/kirillshkro/gshortener/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
-type logCaptureWriter struct {
-	strings.Builder
-}
-
-func (l *logCaptureWriter) Write(p []byte) (n int, err error) {
-	return l.Builder.Write(p)
-}
-
 func TestHandlerWithLog(t *testing.T) {
-	service := NewService()
+	service := shortener.NewService()
 
 	wrapped := HandlerWithLog(DecodeHandler(service))
 
@@ -37,7 +30,7 @@ func TestHandlerWithLog(t *testing.T) {
 	assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
 	assert.NotZero(t, elapsed)
 
-	reqData := RequestData{
+	reqData := types.RequestData{
 		URL: "https://weather.google.com",
 	}
 

@@ -8,22 +8,14 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
-type RequestData struct {
-	URL string `json:"url"`
-}
-
-type ResponseData struct {
-	Result string `json:"result"`
-}
-
 type JSONEncoder interface {
 	CreateShortURL(resp http.ResponseWriter, req *http.Request)
 }
 
 func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	var (
-		data     RequestData
-		respData ResponseData
+		data     types.RequestData
+		respData types.ResponseData
 	)
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
