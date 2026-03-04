@@ -15,7 +15,7 @@ import (
 type FileStorage struct {
 	file   *os.File
 	m      sync.Mutex
-	nextID uint
+	nextID int64
 	index  map[types.RawURL]bool
 	stor   map[types.RawURL]types.ShortURL
 }
@@ -29,6 +29,8 @@ func GetFileStorage(fPath string) (*FileStorage, error) {
 	var err error
 	once.Do(func() {
 		instance, err = newFileStorage(fPath)
+		err = instance.load()
+		instance.nextID, err = instance.GetCounter()
 	})
 	return instance, err
 }
@@ -97,7 +99,6 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 	if f.keyExist(key) {
 		return nil
 	}
-
 	item := types.FileData{
 		UUID:        f.nextID,
 		ShortURL:    val,
@@ -150,9 +151,6 @@ func (f *FileStorage) AddRecord(r io.Reader) (err error) {
 }
 
 func (f *FileStorage) keyExist(key types.RawURL) bool {
-	if err := f.Load(); err != nil {
-		return false
-	}
 	if _, ok := f.index[key]; ok {
 		return true
 	}
@@ -243,7 +241,7 @@ func (f *FileStorage) appendItem(item []byte) error {
 	return err
 }
 
-func (f *FileStorage) Load() (err error) {
+func (f *FileStorage) load() (err error) {
 	if f.file == nil {
 		return errors.New("file not opened")
 	}

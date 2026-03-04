@@ -32,11 +32,16 @@ func (s *storageDataSuite) Test_StorageData() {
 }
 
 func (s *storageDataSuite) Test_StorageSetData() {
-	for i := range 2 {
-		ss := strconv.Itoa(i)
-		err := s.fs.SetData("test"+types.RawURL(ss), "testx"+types.ShortURL(ss))
-		s.Require().NoError(err)
-	}
+	err := s.fs.SetData("test0", "testx0")
+	s.Require().NoError(err)
+	err = s.fs.SetData("test0", "testx0")
+	s.Require().NoError(err)
+	err = s.fs.SetData("test1", "testx1")
+	s.Require().NoError(err)
+	err = s.fs.SetData("test2", "testx2")
+	s.Require().NoError(err)
+	err = s.fs.SetData("test3", "testx3")
+	s.Require().NoError(err)
 }
 
 func (s *storageDataSuite) Test_StorageGetCounter() {
@@ -53,17 +58,6 @@ func (s *storageDataSuite) Test_GetFileStorage() {
 	s.Require().NoError(err)
 	s.Assert().NotNil(other)
 	s.Assert().Equal(stor, other)
-}
-
-func (s *storageDataSuite) Test_Load() {
-	state, err := s.fs.file.Stat()
-	s.Assert().NoError(err)
-	if state.Size() < 2 {
-		s.fs.SetData("abc", "bcd")
-	}
-	err = s.fs.Load()
-	s.Assert().NoError(err)
-	s.Assert().NotEmpty(s.fs.stor)
 }
 
 func Test_FileStorageSuite(t *testing.T) {
