@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -13,14 +12,6 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 	"github.com/stretchr/testify/assert"
 )
-
-type logCaptureWriter struct {
-	strings.Builder
-}
-
-func (l *logCaptureWriter) Write(p []byte) (n int, err error) {
-	return l.Builder.Write(p)
-}
 
 func TestHandlerWithLog(t *testing.T) {
 	service := shortener.NewService()
