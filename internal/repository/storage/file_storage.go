@@ -17,7 +17,7 @@ type FileStorage struct {
 	m      sync.Mutex
 	nextID uint
 	index  map[types.RawURL]bool
-	stor   types.TStor
+	stor   map[types.RawURL]types.ShortURL
 }
 
 var (
@@ -43,7 +43,7 @@ func newFileStorage(fPath string) (*FileStorage, error) {
 		file:   file,
 		index:  make(map[types.RawURL]bool),
 		nextID: 1,
-		stor:   make(types.TStor, 0),
+		stor:   make(map[types.RawURL]types.ShortURL),
 	}, nil
 }
 
@@ -141,8 +141,18 @@ func (f *FileStorage) GetCounter() (counter int64, err error) {
 	return
 }
 
+func (f *FileStorage) AddRecord(r io.Reader) (err error) {
+	item := types.FileData{}
+	if err = json.NewDecoder(r).Decode(&item); err != nil {
+		return err
+	}
+	return f.SetData(item.OriginalURL, item.ShortURL)
+}
+
 func (f *FileStorage) keyExist(key types.RawURL) bool {
-	f.Load()
+	if err := f.Load(); err != nil {
+		return false
+	}
 	if _, ok := f.index[key]; ok {
 		return true
 	}
