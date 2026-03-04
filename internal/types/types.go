@@ -12,3 +12,11 @@ type FileData struct {
 }
 
 type TStor []FileData
+
+type RequestData struct {
+	URL string `json:"url"`
+}
+
+type ResponseData struct {
+	Result string `json:"result"`
+}

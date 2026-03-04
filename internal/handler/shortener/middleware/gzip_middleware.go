@@ -1,4 +1,4 @@
-package shortener
+package middleware
 
 import (
 	"compress/gzip"
