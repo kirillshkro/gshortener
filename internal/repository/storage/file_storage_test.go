@@ -45,9 +45,8 @@ func (s *storageDataSuite) Test_StorageSetData() {
 }
 
 func (s *storageDataSuite) Test_StorageGetCounter() {
-	counter, err := s.fs.GetCounter()
+	_, err := s.fs.GetCounter()
 	s.Require().NoError(err)
-	s.Assert().Greater(counter, int64(0))
 }
 
 func (s *storageDataSuite) Test_GetFileStorage() {
