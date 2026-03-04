@@ -115,7 +115,8 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 
 	f.nextID += 1
 	f.index[key] = true
-	return nil
+	err = f.file.Sync()
+	return err
 }
 
 func (f *FileStorage) GetCounter() (counter int64, err error) {
