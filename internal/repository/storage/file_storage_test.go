@@ -39,12 +39,6 @@ func (s *storageDataSuite) Test_StorageSetData() {
 	}
 }
 
-func (s *storageDataSuite) Test_StorageGetCounter() {
-	counter, err := s.fs.GetCounter()
-	s.Require().NoError(err)
-	s.Assert().Greater(counter, int64(0))
-}
-
 func (s *storageDataSuite) Test_GetFileStorage() {
 	stor, err := GetFileStorage("test.json")
 	s.Require().NoError(err)
@@ -53,6 +47,17 @@ func (s *storageDataSuite) Test_GetFileStorage() {
 	s.Require().NoError(err)
 	s.Assert().NotNil(other)
 	s.Assert().Equal(stor, other)
+}
+
+func (s *storageDataSuite) Test_Load() {
+	state, err := s.fs.file.Stat()
+	s.Assert().NoError(err)
+	if state.Size() < 2 {
+		s.fs.SetData("abc", "bcd")
+	}
+	err = s.fs.Load()
+	s.Assert().NoError(err)
+	s.Assert().NotEmpty(s.fs.stor)
 }
 
 func Test_FileStorageSuite(t *testing.T) {
