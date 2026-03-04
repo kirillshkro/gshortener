@@ -42,7 +42,7 @@ func newConfig() *Config {
 	}
 
 	if fileStoragePath, exists = os.LookupEnv("FILE_STORAGE_PATH"); !exists {
-		fileStoragePath = "/var/run/shortener.json"
+		fileStoragePath = "/tmp/shortener.json"
 	}
 
 	return &Config{
