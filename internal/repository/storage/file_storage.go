@@ -95,7 +95,7 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 	}
 
 	if f.keyExist(key) {
-		return errors.New("duplicate key")
+		return nil
 	}
 
 	item := types.FileData{
@@ -249,24 +249,16 @@ func (f *FileStorage) Load() (err error) {
 	}
 
 	var (
-		countLines int64
-		item       types.FileData
-		content    []types.FileData
+		item    types.FileData
+		content []types.FileData
 	)
-	if countLines, err = f.GetCounter(); err != nil {
-		return err
-	}
-	if countLines == 0 {
-		return nil
-	}
-
 	if err = json.NewDecoder(f.file).Decode(&content); err != nil {
 		return
 	}
 
 	for _, item = range content {
 		f.index[item.OriginalURL] = true
+		f.stor[item.OriginalURL] = item.ShortURL
 	}
-
 	return
 }
