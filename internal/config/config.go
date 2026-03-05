@@ -23,6 +23,7 @@ type Config struct {
 	Address    string `json:"address"`
 	ShortedURL string `json:"shorted_url"`
 	FileDB     string `json:"file_db"`
+	DSN        string `json:"dsn"`
 }
 
 func newConfig() *Config {
@@ -31,6 +32,7 @@ func newConfig() *Config {
 		shorted         string
 		fileStoragePath string
 		exists          bool
+		dsnDb           string
 	)
 
 	if baseAddress, exists = os.LookupEnv("SERVER_ADDRESS"); !exists {
@@ -45,9 +47,14 @@ func newConfig() *Config {
 		fileStoragePath = "/tmp/shortener.json"
 	}
 
+	if dsnDb, exists = os.LookupEnv("DATABASE_DSN"); !exists {
+		dsnDb = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+	}
+
 	return &Config{
 		Address:    baseAddress,
 		ShortedURL: shorted,
 		FileDB:     fileStoragePath,
+		DSN:        dsnDb,
 	}
 }
