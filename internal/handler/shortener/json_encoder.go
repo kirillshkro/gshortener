@@ -29,6 +29,10 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	id := Hashing([]byte(data.URL))
 	respData.Result = string(s.ResultAddr) + "/" + id
 	s.Stor.SetData(types.ShortURL(id), types.RawURL(data.URL))
+	if err := s.FStor.SetData(types.RawURL(data.URL), types.ShortURL(id)); err != nil {
+		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(resp).Encode(respData); err != nil {
