@@ -1,4 +1,4 @@
-package shortener
+package middleware
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/kirillshkro/gshortener/internal/handler/shortener"
 	"github.com/rs/zerolog"
 )
 
@@ -22,7 +23,7 @@ func HandlerWithLog(h http.Handler) http.Handler {
 		uri := req.RequestURI
 		method := req.Method
 		tRec := time.Now()
-		h.ServeHTTP(resp, req)
+		h.ServeHTTP(writer, req)
 		interval := time.Since(tRec)
 		logger.Info().Msg(fmt.Sprintf("URI request: %s\t, method: %s\t, time: %v\n", uri, method, interval))
 		size := writer.size
@@ -47,14 +48,14 @@ func (w *respWriter) WriteHeader(statusCode int) {
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
-func EncodeHandler(s IService) http.Handler {
+func EncodeHandler(s shortener.IService) http.Handler {
 	return http.HandlerFunc(s.URLEncode)
 }
 
-func DecodeHandler(s IService) http.Handler {
+func DecodeHandler(s shortener.IService) http.Handler {
 	return http.HandlerFunc(s.URLDecode)
 }
 
-func CreateShortURLHandler(s JSONEncoder) http.Handler {
+func CreateShortURLHandler(s shortener.JSONEncoder) http.Handler {
 	return http.HandlerFunc(s.CreateShortURL)
 }

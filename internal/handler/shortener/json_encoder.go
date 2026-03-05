@@ -8,22 +8,14 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
-type RequestData struct {
-	URL string `json:"url"`
-}
-
-type ResponseData struct {
-	Result string `json:"result"`
-}
-
 type JSONEncoder interface {
 	CreateShortURL(resp http.ResponseWriter, req *http.Request)
 }
 
 func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	var (
-		data     RequestData
-		respData ResponseData
+		data     types.RequestData
+		respData types.ResponseData
 	)
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
@@ -37,6 +29,10 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	id := Hashing([]byte(data.URL))
 	respData.Result = string(s.ResultAddr) + "/" + id
 	s.Stor.SetData(types.ShortURL(id), types.RawURL(data.URL))
+	if err := s.FStor.SetData(types.RawURL(data.URL), types.ShortURL(id)); err != nil {
+		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(resp).Encode(respData); err != nil {

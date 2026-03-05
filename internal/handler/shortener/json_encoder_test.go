@@ -15,9 +15,9 @@ import (
 func Test_CreateShortURL(t *testing.T) {
 	var (
 		mockResp bytes.Buffer
-		mockReq  RequestData
+		mockReq  types.RequestData
 	)
-	testURL := types.RawURL("https://practicum.yandex.ru")
+	testURL := types.RawURL("https://weather.yandex.ru")
 	mockReq.URL = string(testURL)
 	testBody, err := json.Marshal(mockReq)
 	if err != nil {
@@ -27,7 +27,7 @@ func Test_CreateShortURL(t *testing.T) {
 	service, server := setup()
 	defer server.Close()
 	shortedURL := server.URL + "/" + string(id)
-	respData := ResponseData{
+	respData := types.ResponseData{
 		Result: shortedURL,
 	}
 	if err := json.NewEncoder(&mockResp).Encode(respData); err != nil {

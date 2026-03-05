@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kirillshkro/gshortener/internal/config"
 	"github.com/kirillshkro/gshortener/internal/repository/storage"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
@@ -16,6 +17,7 @@ type Service struct {
 	ServAddr   types.RawURL
 	ResultAddr types.ShortURL
 	Stor       *storage.Storage
+	FStor      *storage.FileStorage
 }
 
 type IService interface {
@@ -25,28 +27,46 @@ type IService interface {
 
 // Создает сервис со значениями по умолчанию
 func NewService() *Service {
+	cfg := config.GetConfig()
+	stor, err := storage.GetFileStorage(cfg.FileDB)
+	if err != nil {
+		return nil
+	}
 	return &Service{
 		ServAddr:   types.RawURL("localhost:8080"),
 		ResultAddr: types.ShortURL("localhost:8080"),
 		Stor:       storage.NewStorage(),
+		FStor:      stor,
 	}
 }
 
 // Создает сервис с заданным IP-адресом и портом
 func NewServiceWithAddr(addr types.RawURL) *Service {
+	cfg := config.GetConfig()
+	stor, err := storage.GetFileStorage(cfg.FileDB)
+	if err != nil {
+		return nil
+	}
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: types.ShortURL("localhost:8080"),
 		Stor:       storage.NewStorage(),
+		FStor:      stor,
 	}
 }
 
 // Создает сервис с заданными IP-адресом и портом, и URL сокращенных ссылок
 func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.ShortURL) *Service {
+	cfg := config.GetConfig()
+	stor, err := storage.GetFileStorage(cfg.FileDB)
+	if err != nil {
+		return nil
+	}
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: shortAddr,
 		Stor:       storage.NewStorage(),
+		FStor:      stor,
 	}
 }
 
@@ -66,6 +86,10 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	content := Hashing(bodyReq)
 	outData := baseURL + "/" + content
 	s.Stor.SetData(types.ShortURL(content), types.RawURL(bodyReq))
+	if err := s.FStor.SetData(types.RawURL(bodyReq), types.ShortURL(content)); err != nil {
+		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if _, err = resp.Write([]byte(outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
 	}
