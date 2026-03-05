@@ -23,7 +23,7 @@ func HandlerWithLog(h http.Handler) http.Handler {
 		uri := req.RequestURI
 		method := req.Method
 		tRec := time.Now()
-		h.ServeHTTP(resp, req)
+		h.ServeHTTP(writer, req)
 		interval := time.Since(tRec)
 		logger.Info().Msg(fmt.Sprintf("URI request: %s\t, method: %s\t, time: %v\n", uri, method, interval))
 		size := writer.size
