@@ -21,6 +21,7 @@ func main() {
 	router.Handle("/", middleware.EncodeHandler(service)).Methods(http.MethodPost)
 	router.Handle("/{id}", middleware.DecodeHandler(service)).Methods(http.MethodGet)
 	router.Handle("/api/shorten", middleware.CreateShortURLHandler(service)).Methods(http.MethodPost)
+	router.Handle("/ping", middleware.PingHandler(service)).Methods(http.MethodGet)
 	//Добавляем хандлеры с логгированием
 	router.Use(middleware.HandlerWithLog)
 	//Добавляем хандлеры с сжатием траффика
@@ -35,5 +36,6 @@ func parseFlags() {
 	flag.StringVar(&cfg.Address, "a", cfg.Address, "Set base host address service")
 	flag.StringVar(&cfg.ShortedURL, "b", cfg.ShortedURL, "Set base shorted url")
 	flag.StringVar(&cfg.FileDB, "f", cfg.FileDB, "Set path to database")
+	flag.StringVar(&cfg.DSN, "d", cfg.DSN, "Set database connection string")
 	flag.Parse()
 }
