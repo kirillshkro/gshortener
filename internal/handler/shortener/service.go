@@ -86,6 +86,10 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	content := Hashing(bodyReq)
 	outData := baseURL + "/" + content
 	s.Stor.SetData(types.ShortURL(content), types.RawURL(bodyReq))
+	if err := s.FStor.SetData(types.RawURL(bodyReq), types.ShortURL(content)); err != nil {
+		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if _, err = resp.Write([]byte(outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
 	}
