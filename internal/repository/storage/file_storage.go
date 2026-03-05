@@ -120,11 +120,16 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 }
 
 func (f *FileStorage) GetCounter() (counter int64, err error) {
-	_, err = f.file.Stat()
+	var info os.FileInfo
+	info, err = f.file.Stat()
 	if err != nil {
 		return 0, err
 	}
 	counter = 1
+	if info.Size() == 0 {
+		return counter, nil
+	}
+
 	//Перейти ко второй строке файла
 	//Первой с записью лога
 	if _, err = f.file.Seek(counter+1, io.SeekStart); err != nil {
