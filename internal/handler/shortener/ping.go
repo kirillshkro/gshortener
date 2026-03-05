@@ -1,10 +1,14 @@
 package shortener
 
 import (
+	"context"
 	"database/sql"
 	"net/http"
+	"time"
 
 	"github.com/kirillshkro/gshortener/internal/config"
+
+	_ "github.com/lib/pq"
 )
 
 type Pinger interface {
@@ -28,6 +32,14 @@ func (s Service) Ping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer db.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err = db.PingContext(ctx); err != nil {
+		http.Error(w, "database ping error", http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
