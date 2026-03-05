@@ -19,9 +19,9 @@ func main() {
 	service := shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(cfg.Address), types.ShortURL(cfg.ShortedURL))
 	router := mux.NewRouter()
 	router.Handle("/", middleware.EncodeHandler(service)).Methods(http.MethodPost)
+	router.Handle("/ping", middleware.PingHandler(service)).Methods(http.MethodGet)
 	router.Handle("/{id}", middleware.DecodeHandler(service)).Methods(http.MethodGet)
 	router.Handle("/api/shorten", middleware.CreateShortURLHandler(service)).Methods(http.MethodPost)
-	router.Handle("/ping", middleware.PingHandler(service)).Methods(http.MethodGet)
 	//Добавляем хандлеры с логгированием
 	router.Use(middleware.HandlerWithLog)
 	//Добавляем хандлеры с сжатием траффика
