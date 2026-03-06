@@ -86,7 +86,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	content := Hashing(bodyReq)
 	outData := baseURL + "/" + content
 	s.Stor.SetData(types.ShortURL(content), types.RawURL(bodyReq))
-	if err := s.FStor.SetData(types.RawURL(bodyReq), types.ShortURL(content)); err != nil {
+	if err := s.FStor.SetData(types.ShortURL(content), types.RawURL(bodyReq)); err != nil {
 		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -108,7 +108,8 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	location := s.Stor.Data(types.ShortURL(id))
+	loc, _ := s.Stor.Data(types.ShortURL(id))
+	location := loc
 	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }

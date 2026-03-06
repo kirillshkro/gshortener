@@ -82,7 +82,7 @@ func (f *FileStorage) Data(key types.ShortURL) (types.RawURL, error) {
 /*
 Добавляет в файл пару ключ-значение
 */
-func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
+func (f *FileStorage) SetData(key types.ShortURL, val types.RawURL) error {
 	var (
 		buf []byte
 		err error
@@ -94,13 +94,13 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 		return errors.New("empty params")
 	}
 
-	if f.keyExist(key) {
+	if f.keyExist(val) {
 		return nil
 	}
 	item := types.FileData{
 		UUID:        uuid.NewString(),
-		ShortURL:    val,
-		OriginalURL: key,
+		ShortURL:    key,
+		OriginalURL: val,
 	}
 
 	if buf, err = json.Marshal(item); err != nil {
@@ -111,7 +111,7 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 		return err
 	}
 
-	f.index[key] = true
+	f.index[val] = true
 	err = f.file.Sync()
 	return err
 }
@@ -150,7 +150,7 @@ func (f *FileStorage) AddRecord(r io.Reader) (err error) {
 	if err = json.NewDecoder(r).Decode(&item); err != nil {
 		return err
 	}
-	return f.SetData(item.OriginalURL, item.ShortURL)
+	return f.SetData(item.ShortURL, item.OriginalURL)
 }
 
 func (f *FileStorage) keyExist(key types.RawURL) bool {

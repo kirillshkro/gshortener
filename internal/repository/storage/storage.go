@@ -12,8 +12,8 @@ type Storage struct {
 }
 
 type IStorage interface {
-	Data(key types.ShortURL) types.RawURL
-	SetData(key types.ShortURL, val types.RawURL)
+	Data(key types.ShortURL) (types.RawURL, error)
+	SetData(key types.ShortURL, val types.RawURL) error
 }
 
 func NewStorage() *Storage {
@@ -22,11 +22,11 @@ func NewStorage() *Storage {
 	}
 }
 
-func (s *Storage) Data(key types.ShortURL) types.RawURL {
-	return s.data[key]
+func (s *Storage) Data(key types.ShortURL) (types.RawURL, error) {
+	return s.data[key], nil
 }
 
-func (s *Storage) SetData(key types.ShortURL, val types.RawURL) {
+func (s *Storage) SetData(key types.ShortURL, val types.RawURL) error {
 	s.m.Lock()
 	if key != "" && val != "" {
 		if _, exist := s.data[key]; !exist {
@@ -34,4 +34,5 @@ func (s *Storage) SetData(key types.ShortURL, val types.RawURL) {
 		}
 	}
 	s.m.Unlock()
+	return nil
 }

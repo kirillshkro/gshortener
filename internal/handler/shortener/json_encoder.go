@@ -29,7 +29,7 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	id := Hashing([]byte(data.URL))
 	respData.Result = string(s.ResultAddr) + "/" + id
 	s.Stor.SetData(types.ShortURL(id), types.RawURL(data.URL))
-	if err := s.FStor.SetData(types.RawURL(data.URL), types.ShortURL(id)); err != nil {
+	if err := s.FStor.SetData(types.ShortURL(id), types.RawURL(data.URL)); err != nil {
 		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
