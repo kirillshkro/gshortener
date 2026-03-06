@@ -14,11 +14,10 @@ import (
 )
 
 type FileStorage struct {
-	file   *os.File
-	m      sync.Mutex
-	nextID int64
-	index  map[types.RawURL]bool
-	stor   map[types.RawURL]types.ShortURL
+	file  *os.File
+	m     sync.Mutex
+	index map[types.RawURL]bool
+	stor  map[types.ShortURL]types.RawURL
 }
 
 var (
@@ -31,7 +30,6 @@ func GetFileStorage(fPath string) (*FileStorage, error) {
 	once.Do(func() {
 		instance, err = newFileStorage(fPath)
 		err = instance.load()
-		instance.nextID, err = instance.GetCounter()
 	})
 	return instance, err
 }
@@ -43,10 +41,9 @@ func newFileStorage(fPath string) (*FileStorage, error) {
 	}
 
 	return &FileStorage{
-		file:   file,
-		index:  make(map[types.RawURL]bool),
-		nextID: 1,
-		stor:   make(map[types.RawURL]types.ShortURL),
+		file:  file,
+		index: make(map[types.RawURL]bool),
+		stor:  make(map[types.ShortURL]types.RawURL),
 	}, nil
 }
 
@@ -114,7 +111,6 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 		return err
 	}
 
-	f.nextID += 1
 	f.index[key] = true
 	err = f.file.Sync()
 	return err
@@ -256,14 +252,27 @@ func (f *FileStorage) load() (err error) {
 	var (
 		item    types.FileData
 		content []types.FileData
+		fInfo   os.FileInfo
 	)
+
+	fInfo, err = f.file.Stat()
+	if err != nil {
+		return
+	}
+
+	//Если файл еще пустой (приложение запустилось впервые)
+	// то это не ошибка
+	if fInfo.Size() == 0 {
+		return nil
+	}
+
 	if err = json.NewDecoder(f.file).Decode(&content); err != nil {
 		return
 	}
 
 	for _, item = range content {
 		f.index[item.OriginalURL] = true
-		f.stor[item.OriginalURL] = item.ShortURL
+		f.stor[item.ShortURL] = item.OriginalURL
 	}
 	return
 }
