@@ -9,6 +9,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
@@ -100,7 +101,7 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 		return nil
 	}
 	item := types.FileData{
-		UUID:        f.nextID,
+		UUID:        uuid.NewString(),
 		ShortURL:    val,
 		OriginalURL: key,
 	}
