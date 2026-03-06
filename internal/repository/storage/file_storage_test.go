@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"os"
 	"strconv"
 	"testing"
 
@@ -21,6 +22,7 @@ func (s *storageDataSuite) SetupSuite() {
 
 func (s *storageDataSuite) TearDownSuite() {
 	s.fs.Close()
+	os.Remove("test.json")
 }
 
 func (s *storageDataSuite) Test_StorageData() {
