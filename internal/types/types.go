@@ -11,8 +11,6 @@ type FileData struct {
 	OriginalURL RawURL   `json:"original_url"`
 }
 
-type TStor []FileData
-
 type RequestData struct {
 	URL string `json:"url"`
 }
