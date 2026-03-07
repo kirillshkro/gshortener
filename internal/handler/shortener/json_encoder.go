@@ -35,7 +35,10 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 		http.Error(resp, "unknown server error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if err := s.FStor.SetData(types.ShortURL(id), types.RawURL(data.URL)); err != nil {
+	if err := s.FStor.SetData(types.URLData{
+		ShortURL:    types.ShortURL(id),
+		OriginalURL: types.RawURL(data.URL),
+	}); err != nil {
 		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

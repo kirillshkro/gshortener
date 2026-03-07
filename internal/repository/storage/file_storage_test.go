@@ -34,15 +34,30 @@ func (s *storageDataSuite) Test_StorageData() {
 }
 
 func (s *storageDataSuite) Test_StorageSetData() {
-	err := s.fs.SetData("test0", "testx0")
+	err := s.fs.SetData(types.URLData{
+		ShortURL:    "test0",
+		OriginalURL: "testx0",
+	})
 	s.Require().NoError(err)
-	err = s.fs.SetData("test0", "testx0")
+	err = s.fs.SetData(types.URLData{
+		ShortURL:    "test0",
+		OriginalURL: "testx0",
+	})
 	s.Require().NoError(err)
-	err = s.fs.SetData("test1", "testx1")
+	err = s.fs.SetData(types.URLData{
+		ShortURL:    "test1",
+		OriginalURL: "testx1",
+	})
 	s.Require().NoError(err)
-	err = s.fs.SetData("test2", "testx2")
+	err = s.fs.SetData(types.URLData{
+		ShortURL:    "test2",
+		OriginalURL: "testx2",
+	})
 	s.Require().NoError(err)
-	err = s.fs.SetData("test3", "testx3")
+	err = s.fs.SetData(types.URLData{
+		ShortURL:    "test3",
+		OriginalURL: "testx3",
+	})
 	s.Require().NoError(err)
 }
 
