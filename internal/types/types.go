@@ -5,10 +5,14 @@ package types
 type RawURL string
 type ShortURL string
 
-type FileData struct {
-	UUID        string   `json:"uuid"`
+type URLData struct {
 	ShortURL    ShortURL `json:"short_url"`
 	OriginalURL RawURL   `json:"original_url"`
+}
+
+type FileData struct {
+	UUID string `json:"uuid"`
+	URLData
 }
 
 type RequestData struct {

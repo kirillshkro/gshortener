@@ -97,9 +97,11 @@ func (f *FileStorage) SetData(key types.ShortURL, val types.RawURL) error {
 		return nil
 	}
 	item := types.FileData{
-		UUID:        uuid.NewString(),
-		ShortURL:    key,
-		OriginalURL: val,
+		UUID: uuid.NewString(),
+		URLData: types.URLData{
+			ShortURL:    key,
+			OriginalURL: val,
+		},
 	}
 
 	if buf, err = json.Marshal(item); err != nil {
