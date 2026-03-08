@@ -1,6 +1,9 @@
 package storage
 
 import (
+	"context"
+	"time"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/kirillshkro/gshortener/internal/types"
 	_ "github.com/lib/pq"
@@ -51,10 +54,24 @@ func (s DBStorage) Data(key types.ShortURL) (types.RawURL, error) {
 }
 
 func (s DBStorage) SetData(reqData types.URLData) error {
+	var (
+		stmt   *sqlx.Stmt
+		err    error
+		ctx    context.Context
+		cancel context.CancelFunc
+	)
 	if reqData.ShortURL == "" || reqData.OriginalURL == "" {
 		return types.ErrEmptyValues
 	}
-	if _, err := s.db.Exec(`insert into urls (short_url, original_url) values ($1, $2)`, reqData.ShortURL, reqData.OriginalURL); err != nil {
+	if stmt, err = s.db.Preparex(`insert into urls (short_url, original_url) values ($1, $2)`); err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if _, err = stmt.ExecContext(ctx, reqData.ShortURL, reqData.OriginalURL); err != nil {
 		return err
 	}
 	return nil
