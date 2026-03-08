@@ -17,3 +17,7 @@ func NewDBStorage(connString string) (*DBStorage, error) {
 
 	return &DBStorage{db: db}, nil
 }
+
+func (s *DBStorage) Close() error {
+	return s.db.Close()
+}
