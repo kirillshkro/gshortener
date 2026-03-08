@@ -48,7 +48,7 @@ func newConfig() *Config {
 	}
 
 	if dsnDB, exists = os.LookupEnv("DATABASE_DSN"); !exists {
-		dsnDB = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+		dsnDB = "postgres://postgres:postgres@localhost:5432/shortener?sslmode=disable"
 	}
 
 	return &Config{
