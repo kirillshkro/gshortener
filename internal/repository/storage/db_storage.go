@@ -13,7 +13,19 @@ type DBStorage struct {
 	db *sqlx.DB
 }
 
-func NewDBStorage(connString string) (*DBStorage, error) {
+var (
+	dbInstance *DBStorage
+)
+
+func GetDBStorage(connString string) (*DBStorage, error) {
+	var err error
+	once.Do(func() {
+		dbInstance, err = newDBStorage(connString)
+	})
+	return dbInstance, err
+}
+
+func newDBStorage(connString string) (*DBStorage, error) {
 	db, err := sqlx.Connect("postgres", connString)
 	if err != nil {
 		return nil, err
