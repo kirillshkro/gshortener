@@ -34,6 +34,16 @@ func (d *DBTestsSuite) Test_SetData() {
 	d.Assert().NoError(err)
 }
 
+func (d *DBTestsSuite) Test_SetDataWithEmptyShortURL() {
+	emptyReq := types.URLData{
+		OriginalURL: "",
+		ShortURL:    "",
+	}
+	d.fakeStorage.EXPECT().SetData(emptyReq).Return(types.ErrEmptyValues)
+	err := d.fakeStorage.SetData(emptyReq)
+	d.Assert().Error(err)
+}
+
 func Test_DBStorageSuite(t *testing.T) {
 	suite.Run(t, new(DBTestsSuite))
 }
