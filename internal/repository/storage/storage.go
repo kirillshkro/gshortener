@@ -6,9 +6,10 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
+//go:generate  mockgen -destination internal/mocks/mock_dbstorage.go -package mocks ./internal/repository/storage IStorage
 type Storage struct {
 	data map[types.ShortURL]types.RawURL
-	m    sync.Mutex
+	mu   sync.Mutex
 }
 
 type IStorage interface {
@@ -27,7 +28,8 @@ func (s *Storage) Data(key types.ShortURL) (types.RawURL, error) {
 }
 
 func (s *Storage) SetData(reqData types.URLData) error {
-	s.m.Lock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	key := reqData.ShortURL
 	val := reqData.OriginalURL
 	if key != "" && val != "" {
@@ -35,6 +37,5 @@ func (s *Storage) SetData(reqData types.URLData) error {
 			s.data[key] = val
 		}
 	}
-	s.m.Unlock()
 	return nil
 }
