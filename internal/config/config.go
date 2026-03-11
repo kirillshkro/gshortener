@@ -36,8 +36,12 @@ func newConfig() *Config {
 		cfg             Config
 	)
 
+	//Чтение конфига из файла
 	if err := cleanenv.ReadConfig(".env", &cfg); err != nil {
-		panic(err)
+		//Чтение конфига из переменных окружения
+		if err := cleanenv.ReadEnv(&cfg); err != nil {
+			panic(err)
+		}
 	}
 
 	baseAddress = cfg.Address
