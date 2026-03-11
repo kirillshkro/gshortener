@@ -61,11 +61,32 @@ func NewService() *Service {
 
 // Создает сервис с заданным IP-адресом и портом
 func NewServiceWithAddr(addr types.RawURL) *Service {
+	var (
+		stor storage.IStorage
+		err  error
+	)
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	cfg := config.GetConfig()
-	stor, err := storage.GetFileStorage(cfg.FileDB)
-	if err != nil {
-		return nil
+	if addr == "" {
+		addr = types.RawURL(cfg.Address)
 	}
+	//Считаем, что переменные окружения и флаги не заданы
+	stor = storage.NewStorage()
+
+	//Если задан путь к файлу, то используем файл как БД
+	if cfg.FileDB != "" {
+		if stor, err = storage.GetFileStorage(cfg.FileDB); err != nil {
+			logger.Warn("warning: " + err.Error())
+		}
+	}
+
+	//Если задана DSN, то используем БД
+	if cfg.DSN != "" {
+		if stor, err = storage.GetDBStorage(cfg.DSN); err != nil {
+			logger.Warn("warning: " + err.Error())
+		}
+	}
+
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: types.ShortURL("localhost:8080"),
@@ -75,11 +96,36 @@ func NewServiceWithAddr(addr types.RawURL) *Service {
 
 // Создает сервис с заданными IP-адресом и портом, и URL сокращенных ссылок
 func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.ShortURL) *Service {
+	var (
+		stor storage.IStorage
+		err  error
+	)
 	cfg := config.GetConfig()
-	stor, err := storage.GetFileStorage(cfg.FileDB)
-	if err != nil {
-		return nil
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	if addr == "" {
+		addr = types.RawURL(cfg.Address)
 	}
+	if shortAddr == "" {
+		shortAddr = types.ShortURL(cfg.ShortedURL)
+	}
+
+	//Считаем, что переменные окружения и флаги не заданы
+	stor = storage.NewStorage()
+
+	//Если задан путь к файлу, то используем файл как БД
+	if cfg.FileDB != "" {
+		if stor, err = storage.GetFileStorage(cfg.FileDB); err != nil {
+			logger.Warn("warning: " + err.Error())
+		}
+	}
+
+	//Если задана DSN, то используем БД
+	if cfg.DSN != "" {
+		if stor, err = storage.GetDBStorage(cfg.DSN); err != nil {
+			logger.Warn("warning: " + err.Error())
+		}
+	}
+
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: shortAddr,
