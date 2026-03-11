@@ -5,7 +5,9 @@ import (
 	"encoding/hex"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/kirillshkro/gshortener/internal/config"
@@ -26,11 +28,40 @@ type IService interface {
 
 // Создает сервис со значениями по умолчанию
 func NewService() *Service {
+	//Экземпляр хранилища
+	var stor storage.IStorage
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	cfg := config.GetConfig()
-	stor, err := storage.GetFileStorage(cfg.FileDB)
-	if err != nil {
-		return nil
+
+	//Если задана DSN, то используем БД
+	if cfg.DSN != "" {
+		ds, err := storage.GetDBStorage(cfg.DSN)
+		if err != nil {
+			logger.Warn("warn: " + err.Error())
+			//Если задан путь к файлу, то используем файл
+			if cfg.FileDB != "" {
+				fs, err := storage.GetFileStorage(cfg.FileDB)
+				if err != nil {
+					logger.Error("error: " + err.Error())
+					//Если ничего не задано, то используем память
+					stor = storage.NewStorage()
+					return &Service{
+						ServAddr:   types.RawURL("localhost:8080"),
+						ResultAddr: types.ShortURL("localhost:8080"),
+						Stor:       stor,
+					}
+				}
+				stor = fs
+				return &Service{
+					ServAddr:   types.RawURL("localhost:8080"),
+					ResultAddr: types.ShortURL("localhost:8080"),
+					Stor:       stor,
+				}
+			}
+		}
+		stor = ds
 	}
+
 	return &Service{
 		ServAddr:   types.RawURL("localhost:8080"),
 		ResultAddr: types.ShortURL("localhost:8080"),
