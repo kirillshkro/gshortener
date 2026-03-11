@@ -29,37 +29,27 @@ type IService interface {
 // Создает сервис со значениями по умолчанию
 func NewService() *Service {
 	//Экземпляр хранилища
-	var stor storage.IStorage
+	var (
+		stor storage.IStorage
+		err  error
+	)
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	cfg := config.GetConfig()
+	//Считаем, что переменные окружения и флаги не заданы
+	stor = storage.NewStorage()
+
+	//Если задан путь к файлу, то используем файл как БД
+	if cfg.FileDB != "" {
+		if stor, err = storage.GetFileStorage(cfg.FileDB); err != nil {
+			logger.Warn("warning: " + err.Error())
+		}
+	}
 
 	//Если задана DSN, то используем БД
 	if cfg.DSN != "" {
-		ds, err := storage.GetDBStorage(cfg.DSN)
-		if err != nil {
-			logger.Warn("warn: " + err.Error())
-			//Если задан путь к файлу, то используем файл
-			if cfg.FileDB != "" {
-				fs, err := storage.GetFileStorage(cfg.FileDB)
-				if err != nil {
-					logger.Error("error: " + err.Error())
-					//Если ничего не задано, то используем память
-					stor = storage.NewStorage()
-					return &Service{
-						ServAddr:   types.RawURL("localhost:8080"),
-						ResultAddr: types.ShortURL("localhost:8080"),
-						Stor:       stor,
-					}
-				}
-				stor = fs
-				return &Service{
-					ServAddr:   types.RawURL("localhost:8080"),
-					ResultAddr: types.ShortURL("localhost:8080"),
-					Stor:       stor,
-				}
-			}
+		if stor, err = storage.GetDBStorage(cfg.DSN); err != nil {
+			logger.Warn("warning: " + err.Error())
 		}
-		stor = ds
 	}
 
 	return &Service{
