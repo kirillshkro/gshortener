@@ -20,13 +20,13 @@ type FileStorage struct {
 }
 
 var (
-	once sync.Once
+	once     sync.Once
+	instance *FileStorage
 )
 
 func GetFileStorage(fPath string) (*FileStorage, error) {
 	var (
-		instance *FileStorage
-		err      error
+		err error
 	)
 	once.Do(func() {
 		instance, err = newFileStorage(fPath)
