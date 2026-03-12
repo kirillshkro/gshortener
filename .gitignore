@@ -22,3 +22,5 @@ vendor/
 .idea
 .vscode
 .env
+shortener
+shortenertest_v2
