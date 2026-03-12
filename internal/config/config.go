@@ -36,5 +36,10 @@ func newConfig() *Config {
 		panic(err)
 	}
 
-	return &cfg
+	return &Config{
+		Address:    cfg.Address,
+		ShortedURL: cfg.ShortedURL,
+		FileDB:     cfg.FileDB,
+		DSN:        cfg.DSN,
+	}
 }
