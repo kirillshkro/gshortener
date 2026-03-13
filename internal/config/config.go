@@ -21,10 +21,10 @@ func GetConfig() *Config {
 //Конфиг программы.
 
 type Config struct {
-	Address    string `json:"address"`
-	ShortedURL string `json:"shorted_url"`
-	FileDB     string `json:"file_db"`
-	DSN        string `json:"dsn"`
+	Address    string `json:"address" env:"ADDRESS" env-default:"localhost:8080"`
+	ShortedURL string `json:"shorted_url" env:"SHORTED_URL" env-default:"http://localhost:8080"`
+	FileDB     string `json:"file_db" env:"FILE_DB" env-default:"/tmp/shortener.json"`
+	DSN        string `json:"dsn" env:"DSN"`
 }
 
 func newConfig() *Config {
