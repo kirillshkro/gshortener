@@ -1,8 +1,9 @@
 package config
 
 import (
-	"os"
 	"sync"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 var (
@@ -28,33 +29,17 @@ type Config struct {
 
 func newConfig() *Config {
 	var (
-		baseAddress     string
-		shorted         string
-		fileStoragePath string
-		exists          bool
-		dsnDB           string
+		cfg Config
 	)
 
-	if baseAddress, exists = os.LookupEnv("SERVER_ADDRESS"); !exists {
-		baseAddress = "localhost:8080"
-	}
-
-	if shorted, exists = os.LookupEnv("BASE_URL"); !exists {
-		shorted = "http://localhost:8080"
-	}
-
-	if fileStoragePath, exists = os.LookupEnv("FILE_STORAGE_PATH"); !exists {
-		fileStoragePath = "/tmp/shortener.json"
-	}
-
-	if dsnDB, exists = os.LookupEnv("DATABASE_DSN"); !exists {
-		dsnDB = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+	if err := cleanenv.ReadEnv(&cfg); err != nil {
+		panic(err)
 	}
 
 	return &Config{
-		Address:    baseAddress,
-		ShortedURL: shorted,
-		FileDB:     fileStoragePath,
-		DSN:        dsnDB,
+		Address:    cfg.Address,
+		ShortedURL: cfg.ShortedURL,
+		FileDB:     cfg.FileDB,
+		DSN:        cfg.DSN,
 	}
 }
