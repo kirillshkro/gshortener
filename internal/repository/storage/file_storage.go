@@ -3,7 +3,6 @@ package storage
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -93,7 +92,7 @@ func (f *FileStorage) SetData(reqData types.URLData) (err error) {
 	val := reqData.OriginalURL
 
 	if key == "" || val == "" {
-		return errors.New("empty params")
+		return types.ErrEmptyParams
 	}
 
 	if f.keyExist(val) {
@@ -255,7 +254,7 @@ func (f *FileStorage) appendItem(item []byte) error {
 
 func (f *FileStorage) load() (err error) {
 	if f.file == nil {
-		return errors.New("file not opened")
+		return types.ErrFileOpen
 	}
 
 	var (
