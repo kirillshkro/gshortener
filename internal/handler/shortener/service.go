@@ -16,8 +16,7 @@ import (
 type Service struct {
 	ServAddr   types.RawURL
 	ResultAddr types.ShortURL
-	Stor       *storage.MemoryStorage
-	FStor      *storage.FileStorage
+	Stor       storage.IStorage
 }
 
 type IService interface {
@@ -35,8 +34,7 @@ func NewService() *Service {
 	return &Service{
 		ServAddr:   types.RawURL("localhost:8080"),
 		ResultAddr: types.ShortURL("localhost:8080"),
-		Stor:       storage.NewStorage(),
-		FStor:      stor,
+		Stor:       stor,
 	}
 }
 
@@ -50,8 +48,7 @@ func NewServiceWithAddr(addr types.RawURL) *Service {
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: types.ShortURL("localhost:8080"),
-		Stor:       storage.NewStorage(),
-		FStor:      stor,
+		Stor:       stor,
 	}
 }
 
@@ -65,8 +62,7 @@ func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.Shor
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: shortAddr,
-		Stor:       storage.NewStorage(),
-		FStor:      stor,
+		Stor:       stor,
 	}
 }
 
@@ -90,13 +86,6 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 		OriginalURL: types.RawURL(bodyReq),
 	}); err != nil {
 		log.Println("cannot write to storage: ", err.Error())
-	}
-	if err := s.FStor.SetData(types.URLData{
-		ShortURL:    types.ShortURL(content),
-		OriginalURL: types.RawURL(bodyReq),
-	}); err != nil {
-		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
-		return
 	}
 	if _, err = resp.Write([]byte(outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
