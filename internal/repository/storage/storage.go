@@ -11,7 +11,7 @@ type MemoryStorage struct {
 	mu   sync.Mutex
 }
 
-//go:generate mockgen -source=storage.go -destination=mock_storage.go -package=storage IStorage
+//go:generate mockgen -destination internal/mocks/mock_dbstorage.go -package mocks ./internal/repository/storage IStorage
 type IStorage interface {
 	Data(key types.ShortURL) (types.RawURL, error)
 	SetData(urlData types.URLData) error
