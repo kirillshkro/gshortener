@@ -13,7 +13,7 @@ type MemoryStorage struct {
 
 //go:generate mockgen -source=storage.go -destination=mock_storage.go -package=storage IStorage
 type IStorage interface {
-	Data(key types.ShortURL) types.RawURL
+	Data(key types.ShortURL) (types.RawURL, error)
 	SetData(urlData types.URLData) error
 }
 
@@ -23,8 +23,8 @@ func NewStorage() *MemoryStorage {
 	}
 }
 
-func (s *MemoryStorage) Data(key types.ShortURL) types.RawURL {
-	return s.data[key]
+func (s *MemoryStorage) Data(key types.ShortURL) (types.RawURL, error) {
+	return s.data[key], nil
 }
 
 func (s *MemoryStorage) SetData(urlData types.URLData) error {

@@ -85,10 +85,12 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	resp.WriteHeader(http.StatusCreated)
 	content := Hashing(bodyReq)
 	outData := baseURL + "/" + content
-	s.Stor.SetData(types.URLData{
+	if err = s.Stor.SetData(types.URLData{
 		ShortURL:    types.ShortURL(content),
 		OriginalURL: types.RawURL(bodyReq),
-	})
+	}); err != nil {
+		log.Println("cannot write to storage: ", err.Error())
+	}
 	if err := s.FStor.SetData(types.URLData{
 		ShortURL:    types.ShortURL(content),
 		OriginalURL: types.RawURL(bodyReq),
@@ -114,7 +116,11 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	location := s.Stor.Data(types.ShortURL(id))
+	location, err := s.Stor.Data(types.ShortURL(id))
+	if err != nil {
+		http.Error(resp, "not found", http.StatusNotFound)
+		return
+	}
 	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }

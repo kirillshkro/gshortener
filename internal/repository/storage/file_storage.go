@@ -15,7 +15,7 @@ import (
 
 type FileStorage struct {
 	file  *os.File
-	m     sync.Mutex
+	mu    sync.Mutex
 	index map[types.RawURL]bool
 	stor  map[types.RawURL]types.ShortURL
 }
@@ -86,8 +86,8 @@ func (f *FileStorage) SetData(reqData types.URLData) (err error) {
 	var (
 		buf []byte
 	)
-	f.m.Lock()
-	defer f.m.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	key := reqData.ShortURL
 	val := reqData.OriginalURL
