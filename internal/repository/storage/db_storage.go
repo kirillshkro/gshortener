@@ -3,12 +3,10 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"os"
 	"sync"
 
 	"github.com/kirillshkro/gshortener/internal/types"
 	_ "github.com/lib/pq"
-	goose "github.com/pressly/goose/v3"
 )
 
 type DBStorage struct {
@@ -41,24 +39,27 @@ func newDBStorage(conn string) (*DBStorage, error) {
 
 func GetDBStorage(conn string) (*DBStorage, error) {
 	var (
-		err      error
-		provider *goose.Provider
+		err error
 	)
 	dbonce.Do(func() {
-		fs := os.DirFS("../../../migrations")
 		dbinstance, err = newDBStorage(conn)
 		if err != nil {
 			return
 		}
-		provider, err = goose.NewProvider(goose.DialectPostgres, dbinstance.db, fs)
-		if err != nil {
+		if _, err = dbinstance.db.ExecContext(context.Background(),
+			"create table urls (id serial primary key, short_url text not null, original_url text not null);"); err != nil {
 			return
 		}
-		defer provider.Close()
-		_, err = provider.Up(context.Background())
-		if err != nil {
+		if _, err = dbinstance.db.ExecContext(context.Background(), "create unique index original_url_idx on urls (original_url);"); err != nil {
+			return
+		}
+		if _, err = dbinstance.db.ExecContext(context.Background(), "create unique index short_url_idx on urls (short_url);"); err != nil {
 			return
 		}
 	})
 	return dbinstance, err
+}
+
+func (s *DBStorage) Close() error {
+	return s.db.Close()
 }
