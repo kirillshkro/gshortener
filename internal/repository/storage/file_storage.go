@@ -3,21 +3,20 @@ package storage
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
 type FileStorage struct {
-	file   *os.File
-	m      sync.Mutex
-	nextID int64
-	index  map[types.RawURL]bool
-	stor   map[types.RawURL]types.ShortURL
+	file  *os.File
+	mu    sync.Mutex
+	index map[types.RawURL]bool
+	stor  map[types.RawURL]types.ShortURL
 }
 
 var (
@@ -30,7 +29,6 @@ func GetFileStorage(fPath string) (*FileStorage, error) {
 	once.Do(func() {
 		instance, err = newFileStorage(fPath)
 		err = instance.load()
-		instance.nextID, err = instance.GetCounter()
 	})
 	return instance, err
 }
@@ -42,10 +40,9 @@ func newFileStorage(fPath string) (*FileStorage, error) {
 	}
 
 	return &FileStorage{
-		file:   file,
-		index:  make(map[types.RawURL]bool),
-		nextID: 1,
-		stor:   make(map[types.RawURL]types.ShortURL),
+		file:  file,
+		index: make(map[types.RawURL]bool),
+		stor:  make(map[types.RawURL]types.ShortURL),
 	}, nil
 }
 
@@ -84,25 +81,29 @@ func (f *FileStorage) Data(key types.ShortURL) (types.RawURL, error) {
 /*
 Добавляет в файл пару ключ-значение
 */
-func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
+func (f *FileStorage) SetData(reqData types.URLData) (err error) {
 	var (
 		buf []byte
-		err error
 	)
-	f.m.Lock()
-	defer f.m.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	key := reqData.ShortURL
+	val := reqData.OriginalURL
 
 	if key == "" || val == "" {
-		return errors.New("empty params")
+		return types.ErrEmptyParams
 	}
 
-	if f.keyExist(key) {
+	if f.keyExist(val) {
 		return nil
 	}
 	item := types.FileData{
-		UUID:        f.nextID,
-		ShortURL:    val,
-		OriginalURL: key,
+		UUID: uuid.New().String(),
+		URLData: types.URLData{
+			ShortURL:    key,
+			OriginalURL: val,
+		},
 	}
 
 	if buf, err = json.Marshal(item); err != nil {
@@ -113,8 +114,7 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 		return err
 	}
 
-	f.nextID += 1
-	f.index[key] = true
+	f.index[val] = true
 	err = f.file.Sync()
 	return err
 }
@@ -153,7 +153,12 @@ func (f *FileStorage) AddRecord(r io.Reader) (err error) {
 	if err = json.NewDecoder(r).Decode(&item); err != nil {
 		return err
 	}
-	return f.SetData(item.OriginalURL, item.ShortURL)
+
+	rec := types.URLData{
+		ShortURL:    item.ShortURL,
+		OriginalURL: item.OriginalURL,
+	}
+	return f.SetData(rec)
 }
 
 func (f *FileStorage) keyExist(key types.RawURL) bool {
@@ -249,13 +254,25 @@ func (f *FileStorage) appendItem(item []byte) error {
 
 func (f *FileStorage) load() (err error) {
 	if f.file == nil {
-		return errors.New("file not opened")
+		return types.ErrFileOpen
 	}
 
 	var (
 		item    types.FileData
 		content []types.FileData
+		fInfo   os.FileInfo
 	)
+
+	fInfo, err = f.file.Stat()
+	if err != nil {
+		return
+	}
+	//Если файл только что создан и загружать еще нечего,
+	//то ошибки нет
+	if fInfo.Size() == 0 {
+		return nil
+	}
+
 	if err = json.NewDecoder(f.file).Decode(&content); err != nil {
 		return
 	}

@@ -28,10 +28,11 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	}
 	id := Hashing([]byte(data.URL))
 	respData.Result = string(s.ResultAddr) + "/" + id
-	s.Stor.SetData(types.ShortURL(id), types.RawURL(data.URL))
-	if err := s.FStor.SetData(types.RawURL(data.URL), types.ShortURL(id)); err != nil {
-		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
-		return
+	if err := s.Stor.SetData(types.URLData{
+		ShortURL:    types.ShortURL(id),
+		OriginalURL: types.RawURL(data.URL),
+	}); err != nil {
+		log.Println("cannot write to storage: ", err.Error())
 	}
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusCreated)

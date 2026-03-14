@@ -78,7 +78,12 @@ func Test_URLDecode(t *testing.T) {
 	const testURL = `https://practicum.yandex.ru`
 	id := Hashing([]byte(testURL))
 	service, fakeServ := setup()
-	service.Stor.SetData(types.ShortURL(id), types.RawURL(testURL))
+	if err := service.Stor.SetData(types.URLData{
+		ShortURL:    types.ShortURL(id),
+		OriginalURL: types.RawURL(testURL),
+	}); err != nil {
+		t.Fatal(err)
+	}
 	tests := []struct {
 		name   string
 		method string

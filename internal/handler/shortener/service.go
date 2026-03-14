@@ -16,8 +16,7 @@ import (
 type Service struct {
 	ServAddr   types.RawURL
 	ResultAddr types.ShortURL
-	Stor       *storage.Storage
-	FStor      *storage.FileStorage
+	Stor       storage.IStorage
 }
 
 type IService interface {
@@ -35,8 +34,7 @@ func NewService() *Service {
 	return &Service{
 		ServAddr:   types.RawURL("localhost:8080"),
 		ResultAddr: types.ShortURL("localhost:8080"),
-		Stor:       storage.NewStorage(),
-		FStor:      stor,
+		Stor:       stor,
 	}
 }
 
@@ -50,8 +48,7 @@ func NewServiceWithAddr(addr types.RawURL) *Service {
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: types.ShortURL("localhost:8080"),
-		Stor:       storage.NewStorage(),
-		FStor:      stor,
+		Stor:       stor,
 	}
 }
 
@@ -65,8 +62,7 @@ func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.Shor
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: shortAddr,
-		Stor:       storage.NewStorage(),
-		FStor:      stor,
+		Stor:       stor,
 	}
 }
 
@@ -85,10 +81,11 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	resp.WriteHeader(http.StatusCreated)
 	content := Hashing(bodyReq)
 	outData := baseURL + "/" + content
-	s.Stor.SetData(types.ShortURL(content), types.RawURL(bodyReq))
-	if err := s.FStor.SetData(types.RawURL(bodyReq), types.ShortURL(content)); err != nil {
-		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
-		return
+	if err = s.Stor.SetData(types.URLData{
+		ShortURL:    types.ShortURL(content),
+		OriginalURL: types.RawURL(bodyReq),
+	}); err != nil {
+		log.Println("cannot write to storage: ", err.Error())
 	}
 	if _, err = resp.Write([]byte(outData)); err != nil {
 		log.Printf("don't send response because by %s\n", err.Error())
@@ -108,7 +105,11 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	location := s.Stor.Data(types.ShortURL(id))
+	location, err := s.Stor.Data(types.ShortURL(id))
+	if err != nil {
+		http.Error(resp, "not found", http.StatusNotFound)
+		return
+	}
 	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }
