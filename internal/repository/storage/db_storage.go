@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
+	"io/fs"
+	"os"
 	"sync"
 
 	"github.com/kirillshkro/gshortener/internal/types"
@@ -38,10 +41,25 @@ func newDBStorage(conn string) (*DBStorage, error) {
 }
 
 func GetDBStorage(conn string) (*DBStorage, error) {
-	var err error
+	var (
+		err      error
+		provider *goose.Provider
+	)
 	dbonce.Do(func() {
+		var fs fs.FS = os.DirFS("../../../migrations")
 		dbinstance, err = newDBStorage(conn)
-		err = goose.Up(dbinstance.db, "./migrations")
+		if err != nil {
+			return
+		}
+		provider, err = goose.NewProvider(goose.DialectPostgres, dbinstance.db, fs)
+		if err != nil {
+			return
+		}
+		defer provider.Close()
+		_, err = provider.Up(context.Background())
+		if err != nil {
+			return
+		}
 	})
 	return dbinstance, err
 }
