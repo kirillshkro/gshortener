@@ -20,13 +20,13 @@ var (
 )
 
 func (s *DBStorage) Data(key types.ShortURL) (types.RawURL, error) {
-	var originalUrl types.RawURL
+	var originalURL types.RawURL
 	if key != "" {
 		if row := s.db.QueryRowContext(context.Background(), "select original_url from urls where short_url = $1", key); row != nil {
-			if err := row.Scan(&originalUrl); err != nil {
+			if err := row.Scan(&originalURL); err != nil {
 				return "", err
 			}
-			return originalUrl, nil
+			return originalURL, nil
 		}
 	}
 	return "", types.ErrEmptyParams
