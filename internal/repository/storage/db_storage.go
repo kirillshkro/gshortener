@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"io/fs"
 	"os"
 	"sync"
 
@@ -46,7 +45,7 @@ func GetDBStorage(conn string) (*DBStorage, error) {
 		provider *goose.Provider
 	)
 	dbonce.Do(func() {
-		var fs fs.FS = os.DirFS("../../../migrations")
+		fs := os.DirFS("../../../migrations")
 		dbinstance, err = newDBStorage(conn)
 		if err != nil {
 			return
