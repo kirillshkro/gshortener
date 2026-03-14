@@ -43,16 +43,11 @@ func setupService(cfg *config.Config) *shortener.Service {
 		err  error
 	)
 	service := shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(cfg.Address), types.ShortURL(cfg.ShortedURL))
-	if cfg.DSN != "" {
-		logger.Info("Try connect to database", "dsn", cfg.DSN)
-		if stor, err = storage.GetDBStorage(cfg.DSN); err != nil {
-			logger.Warn("Failed to connect to database, switching to the next option", "error", err)
-		} else {
-			logger.Info("Using database storage")
-			service.Stor = stor
-		}
+	if cfg.DSN == "" && cfg.FileDB == "" {
+		service.Stor = storage.NewStorage()
+		logger.Info("All external storages are unavailable. Using in-memory storage (will not be saved after restart)")
 	}
-	if cfg.FileDB != "" {
+	if (cfg.FileDB != "") && (cfg.DSN == "") {
 		if stor, err = storage.GetFileStorage(cfg.FileDB); err != nil {
 			logger.Warn("Failed to use file storage, switching to the next option", "error", err)
 		} else {
@@ -62,10 +57,16 @@ func setupService(cfg *config.Config) *shortener.Service {
 			logger.Info("Using file storage")
 		}
 	}
-	if cfg.DSN == "" && cfg.FileDB == "" {
-		service.Stor = storage.NewStorage()
-		logger.Info("All external storages are unavailable. Using in-memory storage (will not be saved after restart)")
+	if cfg.DSN != "" {
+		logger.Info("Try connect to database", "dsn", cfg.DSN)
+		if stor, err = storage.GetDBStorage(cfg.DSN); err != nil {
+			logger.Warn("Failed to connect to database, switching to the next option", "error", err)
+		} else {
+			logger.Info("Using database storage")
+			service.Stor = stor
+		}
 	}
+
 	return service
 }
 
