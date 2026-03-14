@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"sync"
+	"time"
 
 	"github.com/kirillshkro/gshortener/internal/types"
 	_ "github.com/lib/pq"
@@ -32,7 +33,17 @@ func (s *DBStorage) Data(key types.ShortURL) (types.RawURL, error) {
 }
 
 func (s *DBStorage) SetData(urlData types.URLData) error {
-	return nil
+	if urlData.ShortURL != "" && urlData.OriginalURL != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := s.db.ExecContext(ctx, "insert into urls (short_url, original_url) values ($1, $2)",
+			urlData.ShortURL,
+			urlData.OriginalURL); err != nil {
+			return err
+		}
+		return nil
+	}
+	return types.ErrEmptyParams
 }
 
 func newDBStorage(conn string) (*DBStorage, error) {
