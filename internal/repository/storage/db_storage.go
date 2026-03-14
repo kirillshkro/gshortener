@@ -3,13 +3,11 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/kirillshkro/gshortener/internal/types"
 	_ "github.com/lib/pq"
-	"github.com/pressly/goose/v3"
 )
 
 type DBStorage struct {
@@ -77,8 +75,17 @@ func GetDBStorage(conn string) (*DBStorage, error) {
 }
 
 func (s *DBStorage) populateTables() error {
-	if err := goose.Up(s.db, "../../../migrations"); err != nil {
-		return fmt.Errorf("failed to run migrations: %w", err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := s.db.ExecContext(ctx,
+		"create table if not exists urls (id serial primary key, short_url text not null, original_url text not null);"); err != nil {
+		return err
+	}
+	if _, err := s.db.ExecContext(ctx, "create unique index if not exists original_url_idx on urls (original_url);"); err != nil {
+		return err
+	}
+	if _, err := s.db.ExecContext(ctx, "create unique index if not exists short_url_idx on urls (short_url);"); err != nil {
+		return err
 	}
 	return nil
 }
