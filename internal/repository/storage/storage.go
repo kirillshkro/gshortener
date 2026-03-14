@@ -15,9 +15,10 @@ type MemoryStorage struct {
 type IStorage interface {
 	Data(key types.ShortURL) (types.RawURL, error)
 	SetData(urlData types.URLData) error
+	Close() error
 }
 
-func NewStorage() *MemoryStorage {
+func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
 		data: make(map[types.ShortURL]types.RawURL),
 	}
@@ -37,5 +38,9 @@ func (s *MemoryStorage) SetData(urlData types.URLData) error {
 			s.data[key] = val
 		}
 	}
+	return nil
+}
+
+func (s *MemoryStorage) Close() error {
 	return nil
 }

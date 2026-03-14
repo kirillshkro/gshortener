@@ -44,7 +44,7 @@ func setupService(cfg *config.Config) *shortener.Service {
 	)
 	service := shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(cfg.Address), types.ShortURL(cfg.ShortedURL))
 	if cfg.DSN == "" && cfg.FileDB == "" {
-		service.Stor = storage.NewStorage()
+		service.Stor = storage.NewMemoryStorage()
 		logger.Info("All external storages are unavailable. Using in-memory storage (will not be saved after restart)")
 	}
 	if (cfg.FileDB != "") && (cfg.DSN == "") {
