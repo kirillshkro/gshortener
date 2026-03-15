@@ -176,11 +176,11 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 
 	//устанавливаем тип ответа
 	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteHeader(http.StatusCreated)
 	if err = json.NewEncoder(resp).Encode(answer); err != nil {
 		s.logger.Error("cannot encode response: " + err.Error())
 		return
 	}
-	resp.WriteHeader(http.StatusCreated)
 }
 
 func Hashing(data []byte) types.ShortURL {

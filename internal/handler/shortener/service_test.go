@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/kirillshkro/gshortener/internal/types"
 	"github.com/stretchr/testify/assert"
@@ -213,6 +214,57 @@ func (s *ServiceTestsSuite) Test_CreateShortURL() {
 				assert.JSONEqf(t, string(rBody), mockResp.String(), "Test failed by body expected: %v, actual: %v\n", mockResp.String(), string(rBody))
 			}
 		})
+	}
+}
+
+func (s *ServiceTestsSuite) Test_BatchCreateShortURL() {
+	inputTestData := []types.BatchRequest{
+		{
+			CorrelationID: uuid.NewString(),
+			OriginalURL:   "https://practicum.yandex.ru",
+		},
+		{
+			CorrelationID: uuid.NewString(),
+			OriginalURL:   "https://weather.google.com",
+		},
+	}
+
+	reqBody := bytes.NewBuffer([]byte{})
+
+	if err := json.NewEncoder(reqBody).Encode(inputTestData); err != nil {
+		s.T().Fatal(err)
+	}
+
+	expectedData := []types.BatchResponse{
+		{
+			CorrelationID: inputTestData[0].CorrelationID,
+			ShortURL:      s.service.ResultAddr + "/" + Hashing([]byte("https://practicum.yandex.ru")),
+		},
+		{
+			CorrelationID: inputTestData[1].CorrelationID,
+			ShortURL:      s.service.ResultAddr + "/" + Hashing([]byte("https://weather.google.com")),
+		},
+	}
+
+	expectedResp := bytes.NewBuffer([]byte{})
+
+	if err := json.NewEncoder(expectedResp).Encode(expectedData); err != nil {
+		s.T().Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, s.server.URL+"/api/shorten/batch", reqBody)
+	rr := httptest.NewRecorder()
+	s.service.BatchCreateShortURL(rr, req)
+	resp := rr.Result()
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+
+	if s.Assert().Equal(http.StatusCreated, resp.StatusCode) {
+		s.Assert().JSONEq(expectedResp.String(), string(respBody))
 	}
 }
 
