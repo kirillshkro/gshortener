@@ -142,24 +142,22 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	}
 
 	var (
-		item   types.BatchRequest
-		err    error
-		answer []types.BatchResponse
+		bodyReq []types.BatchRequest
+		item    types.BatchRequest
+		err     error
+		answer  []types.BatchResponse
 	)
 
 	reader := bufio.NewReader(req.Body)
 
 	dec := json.NewDecoder(reader)
 
-	for {
-		if err = dec.Decode(&item); err != nil {
-			if err == io.EOF {
-				break
-			}
-			s.logger.Error("cannot decode request: " + err.Error())
-			resp.WriteHeader(http.StatusBadRequest)
-			return
-		}
+	if err = dec.Decode(&bodyReq); err != nil {
+		s.logger.Error("cannot decode request: " + err.Error())
+		resp.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	for _, item = range bodyReq {
 		hashURL := Hashing([]byte(item.OriginalURL))
 		//сохраняем в хранилище
 		if err = s.Stor.SetData(types.URLData{
@@ -175,6 +173,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 		}
 		answer = append(answer, out)
 	}
+
 	//устанавливаем тип сжатия
 	resp.Header().Set("Accept-Encoding", "gzip")
 	//устанавливаем тип ответа
