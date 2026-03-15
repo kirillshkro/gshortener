@@ -174,8 +174,6 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 		answer = append(answer, out)
 	}
 
-	//устанавливаем тип сжатия
-	resp.Header().Set("Accept-Encoding", "gzip")
 	//устанавливаем тип ответа
 	resp.Header().Set("Content-Type", "application/json")
 	if err = json.NewEncoder(resp).Encode(answer); err != nil {
