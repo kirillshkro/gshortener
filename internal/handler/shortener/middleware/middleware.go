@@ -64,6 +64,6 @@ func PingHandler(s shortener.Pinger) http.Handler {
 	return http.HandlerFunc(s.Ping)
 }
 
-func BatchCreateUrlHandler(s shortener.IService) http.Handler {
+func BatchCreateURLHandler(s shortener.IService) http.Handler {
 	return http.HandlerFunc(s.BatchCreateShortURL)
 }
