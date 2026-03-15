@@ -156,7 +156,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 			if err == io.EOF {
 				break
 			}
-			s.logger.Error("cannot decode request: ", err.Error())
+			s.logger.Error("cannot decode request: " + err.Error())
 			resp.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -166,7 +166,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 			ShortURL:    hashURL,
 			OriginalURL: item.OriginalURL,
 		}); err != nil {
-			s.logger.Error("cannot write to storage: ", err.Error())
+			s.logger.Error("cannot write to storage: " + err.Error())
 		}
 		shortedURL := s.ResultAddr + "/" + hashURL
 		out := types.BatchResponse{
@@ -180,7 +180,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	//устанавливаем тип ответа
 	resp.Header().Set("Content-Type", "application/json")
 	if err = json.NewEncoder(resp).Encode(answer); err != nil {
-		s.logger.Error("cannot encode response: ", err.Error())
+		s.logger.Error("cannot encode response: " + err.Error())
 		return
 	}
 	resp.WriteHeader(http.StatusCreated)
