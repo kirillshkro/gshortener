@@ -27,7 +27,7 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	id := Hashing([]byte(data.URL))
-	respData.Result = string(s.ResultAddr) + "/" + id
+	respData.Result = s.ResultAddr + "/" + id
 	if err := s.Stor.SetData(types.URLData{
 		ShortURL:    types.ShortURL(id),
 		OriginalURL: types.RawURL(data.URL),
