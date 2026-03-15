@@ -18,7 +18,7 @@ func Test_CreateShortURL(t *testing.T) {
 		mockReq  types.RequestData
 	)
 	testURL := types.RawURL("https://weather.yandex.ru")
-	mockReq.URL = string(testURL)
+	mockReq.URL = testURL
 	testBody, err := json.Marshal(mockReq)
 	if err != nil {
 		t.Fatal(err)
@@ -26,7 +26,7 @@ func Test_CreateShortURL(t *testing.T) {
 	id := Hashing([]byte(testURL))
 	service, server := setup()
 	defer server.Close()
-	shortedURL := server.URL + "/" + string(id)
+	shortedURL := types.ShortURL(server.URL) + "/" + id
 	respData := types.ResponseData{
 		Result: shortedURL,
 	}

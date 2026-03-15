@@ -18,7 +18,7 @@ func Test_URLEncode(t *testing.T) {
 		name   string
 		method string
 		uri    string
-		hash   string
+		hash   types.ShortURL
 		code   int
 	}{
 		{
