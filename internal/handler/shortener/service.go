@@ -161,6 +161,13 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 			return
 		}
 		hashURL := Hashing([]byte(item.OriginalURL))
+		//сохраняем в хранилище
+		if err = s.Stor.SetData(types.URLData{
+			ShortURL:    hashURL,
+			OriginalURL: item.OriginalURL,
+		}); err != nil {
+			s.logger.Error("cannot write to storage: ", err.Error())
+		}
 		shortedURL := s.ResultAddr + "/" + hashURL
 		out := types.BatchResponse{
 			CorrelationID: item.CorrelationID,
@@ -168,6 +175,9 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 		}
 		answer = append(answer, out)
 	}
+	//устанавливаем тип сжатия
+	resp.Header().Set("Accept-Encoding", "gzip")
+	//устанавливаем тип ответа
 	resp.Header().Set("Content-Type", "application/json")
 	if err = json.NewEncoder(resp).Encode(answer); err != nil {
 		s.logger.Error("cannot encode response: ", err.Error())
