@@ -1,6 +1,6 @@
 module github.com/kirillshkro/gshortener
 
-go 1.25.0
+go 1.25.8
 
 require (
 	github.com/gorilla/mux v1.8.1
