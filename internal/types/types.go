@@ -16,19 +16,19 @@ type FileData struct {
 }
 
 type RequestData struct {
-	URL string `json:"url"`
+	URL RawURL `json:"url"`
 }
 
 type ResponseData struct {
-	Result string `json:"result"`
+	Result ShortURL `json:"result"`
 }
 
 type BatchRequest struct {
 	CorrelationID string `json:"correlation_id"`
-	OriginalURL   string `json:"original_url"`
+	OriginalURL   RawURL `json:"original_url"`
 }
 
 type BatchResponse struct {
-	CorrelationID string `json:"correlation_id"`
-	ShortURL      string `json:"short_url"`
+	CorrelationID string   `json:"correlation_id"`
+	ShortURL      ShortURL `json:"short_url"`
 }
