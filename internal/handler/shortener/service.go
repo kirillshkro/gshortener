@@ -20,8 +20,21 @@ type Service struct {
 }
 
 type IService interface {
+	URLEncoder
+	URLDecoder
+	BatchCreator
+}
+
+type URLEncoder interface {
 	URLEncode(resp http.ResponseWriter, req *http.Request)
+}
+
+type URLDecoder interface {
 	URLDecode(resp http.ResponseWriter, req *http.Request)
+}
+
+type BatchCreator interface {
+	BatchCreateShortURL(resp http.ResponseWriter, req *http.Request)
 }
 
 // Создает сервис со значениями по умолчанию
