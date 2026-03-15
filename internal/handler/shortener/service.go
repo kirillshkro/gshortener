@@ -1,11 +1,15 @@
 package shortener
 
 import (
+	"bufio"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/kirillshkro/gshortener/internal/config"
@@ -17,6 +21,7 @@ type Service struct {
 	ServAddr   types.RawURL
 	ResultAddr types.ShortURL
 	Stor       storage.IStorage
+	logger     *slog.Logger
 }
 
 type IService interface {
@@ -48,6 +53,7 @@ func NewService() *Service {
 		ServAddr:   types.RawURL("localhost:8080"),
 		ResultAddr: types.ShortURL("localhost:8080"),
 		Stor:       stor,
+		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
 	}
 }
 
@@ -62,6 +68,7 @@ func NewServiceWithAddr(addr types.RawURL) *Service {
 		ServAddr:   addr,
 		ResultAddr: types.ShortURL("localhost:8080"),
 		Stor:       stor,
+		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
 	}
 }
 
@@ -76,6 +83,7 @@ func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.Shor
 		ServAddr:   addr,
 		ResultAddr: shortAddr,
 		Stor:       stor,
+		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
 	}
 }
 
@@ -85,7 +93,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	baseURL := string(s.ResultAddr)
+	baseURL := s.ResultAddr
 	bodyReq, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Println("cannot read request: ", err.Error())
@@ -127,9 +135,50 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func Hashing(data []byte) string {
+func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		resp.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	var (
+		item   types.BatchRequest
+		err    error
+		answer []types.BatchResponse
+	)
+
+	reader := bufio.NewReader(req.Body)
+
+	dec := json.NewDecoder(reader)
+
+	for {
+		if err = dec.Decode(&item); err != nil {
+			if err == io.EOF {
+				break
+			}
+			s.logger.Error("cannot decode request: ", err.Error())
+			resp.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		hashURL := Hashing([]byte(item.OriginalURL))
+		shortedURL := s.ResultAddr + "/" + hashURL
+		out := types.BatchResponse{
+			CorrelationID: item.CorrelationID,
+			ShortURL:      shortedURL,
+		}
+		answer = append(answer, out)
+	}
+	resp.Header().Set("Content-Type", "application/json")
+	if err = json.NewEncoder(resp).Encode(answer); err != nil {
+		s.logger.Error("cannot encode response: ", err.Error())
+		return
+	}
+	resp.WriteHeader(http.StatusCreated)
+}
+
+func Hashing(data []byte) types.ShortURL {
 	hashed := sha1.Sum(data)
 	shorthed := hashed[:6]
-	content := hex.EncodeToString(shorthed)
+	content := types.ShortURL(hex.EncodeToString(shorthed))
 	return content
 }
