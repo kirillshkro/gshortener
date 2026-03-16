@@ -5,7 +5,6 @@ import (
 
 	"github.com/kirillshkro/gshortener/internal/mocks"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -40,70 +39,49 @@ func (d *DBStorageTestSuite) TestDBStorage_SetData() {
 	d.Assert().NoError(err)
 }
 
-func TestDBStorage_SetData_EmptyShortURL(t *testing.T) {
+func (d *DBStorageTestSuite) TestDBStorage_SetData_EmptyShortURL() {
 	// Готовим данные
 	urlData := types.URLData{
 		ShortURL:    "",
 		OriginalURL: "https://example.com",
 	}
-
-	// Создаем мок
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockStorage := mocks.NewMockIStorage(ctrl)
-	mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
+	d.mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
 	// Вызываем метод
-	err := mockStorage.SetData(urlData)
+	err := d.mockStorage.SetData(urlData)
 
 	// Проверяем результат
-	assert.Error(t, err, "ожидалась ошибка при пустом ShortURL")
-	nilErr := (err == nil)
-	assert.False(t, nilErr, "ошибка не должна быть nil")
+	d.Assert().Error(err, "ожидалась ошибка при пустом ShortURL")
 }
 
-func TestDBStorage_SetData_EmptyOriginalURL(t *testing.T) {
+func (d *DBStorageTestSuite) TestDBStorage_SetData_EmptyOriginalURL() {
 	// Готовим данные
 	urlData := types.URLData{
 		ShortURL:    "abc123",
 		OriginalURL: "",
 	}
 
-	// Создаем мок
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockStorage := mocks.NewMockIStorage(ctrl)
-
-	mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
+	d.mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
 
 	// Вызываем метод
-	err := mockStorage.SetData(urlData)
+	err := d.mockStorage.SetData(urlData)
 
 	// Проверяем результат
-	assert.Error(t, err, "ожидалась ошибка при пустом OriginalURL")
-	nilErr := (err == nil)
-	assert.False(t, nilErr, "ошибка не должна быть nil")
+	d.Assert().Error(err, "ожидалась ошибка при пустом OriginalURL")
 }
 
-func TestDBStorage_SetData_BothEmpty(t *testing.T) {
+func (d *DBStorageTestSuite) TestDBStorage_SetData_BothEmpty() {
 	// Готовим данные
 	urlData := types.URLData{
 		ShortURL:    "",
 		OriginalURL: "",
 	}
 
-	// Создаем мок
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockStorage := mocks.NewMockIStorage(ctrl)
-
-	mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
+	d.mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
 	// Вызываем метод
-	err := mockStorage.SetData(urlData)
+	err := d.mockStorage.SetData(urlData)
 
 	// Проверяем результат
-	assert.Error(t, err, "ожидалась ошибка при пустых полях")
-	nilErr := (err == nil)
-	assert.False(t, nilErr, "ошибка не должна быть nil")
+	d.Assert().Error(err, "ожидалась ошибка при пустых полях")
 }
 
 func (d *DBStorageTestSuite) TestDBStorage_Data() {
