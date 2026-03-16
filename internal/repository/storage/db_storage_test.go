@@ -32,29 +32,26 @@ func (d *DBStorageTestSuite) TestDBStorage_SetData() {
 	}
 	d.mockStorage.EXPECT().SetData(expectedURLData).Return(nil)
 
-	// Вызов тестируемого метода
 	err := d.mockStorage.SetData(expectedURLData)
 
-	// Проверка результата
 	d.Assert().NoError(err)
 }
 
 func (d *DBStorageTestSuite) TestDBStorage_SetData_EmptyShortURL() {
-	// Готовим данные
+
 	urlData := types.URLData{
 		ShortURL:    "",
 		OriginalURL: "https://example.com",
 	}
 	d.mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
-	// Вызываем метод
+
 	err := d.mockStorage.SetData(urlData)
 
-	// Проверяем результат
 	d.Assert().Error(err, "ожидалась ошибка при пустом ShortURL")
 }
 
 func (d *DBStorageTestSuite) TestDBStorage_SetData_EmptyOriginalURL() {
-	// Готовим данные
+
 	urlData := types.URLData{
 		ShortURL:    "abc123",
 		OriginalURL: "",
@@ -62,38 +59,33 @@ func (d *DBStorageTestSuite) TestDBStorage_SetData_EmptyOriginalURL() {
 
 	d.mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
 
-	// Вызываем метод
 	err := d.mockStorage.SetData(urlData)
 
-	// Проверяем результат
 	d.Assert().Error(err, "ожидалась ошибка при пустом OriginalURL")
 }
 
 func (d *DBStorageTestSuite) TestDBStorage_SetData_BothEmpty() {
-	// Готовим данные
+
 	urlData := types.URLData{
 		ShortURL:    "",
 		OriginalURL: "",
 	}
 
 	d.mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
-	// Вызываем метод
+
 	err := d.mockStorage.SetData(urlData)
 
-	// Проверяем результат
 	d.Assert().Error(err, "ожидалась ошибка при пустых полях")
 }
 
 func (d *DBStorageTestSuite) TestDBStorage_Data() {
-	// Настройка ожидаемого поведения
+
 	shortURL := types.ShortURL("abc123")
 	expectedOriginalURL := types.RawURL("https://example.com")
 	d.mockStorage.EXPECT().Data(shortURL).Return(expectedOriginalURL, nil)
 
-	// Вызов тестируемого метода
 	originalURL, err := d.mockStorage.Data(shortURL)
 
-	// Проверка результата
 	d.Assert().NoError(err)
 	d.Assert().Equal(expectedOriginalURL, originalURL)
 }
