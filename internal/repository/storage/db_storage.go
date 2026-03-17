@@ -59,7 +59,7 @@ func (s *DBStorage) SetData(urlData types.URLData) error {
 		urlData.ShortURL,
 		urlData.OriginalURL)
 	if err != nil {
-		return fmt.Errorf("error inserting data: %w", err)
+		return fmt.Errorf("error inserting data: %w", types.NewErrDuplicateKey("OriginalUrl", string(urlData.OriginalURL)))
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("error commiting transaction: %w", err)
