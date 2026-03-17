@@ -8,9 +8,17 @@ var (
 )
 
 type ErrDuplicateKey struct {
-	key string
+	Field string
+	Key   string
 }
 
-func (e *ErrDuplicateKey) Error() string {
-	return "key " + e.key + " already exists"
+func (e ErrDuplicateKey) Error() string {
+	return "Field: " + e.Field + " with key value" + e.Key + " already exists"
+}
+
+func NewErrDuplicateKey(field, key string) *ErrDuplicateKey {
+	return &ErrDuplicateKey{
+		Field: field,
+		Key:   key,
+	}
 }
