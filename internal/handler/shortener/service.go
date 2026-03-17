@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"log/slog"
@@ -102,19 +103,32 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	resp.WriteHeader(http.StatusCreated)
 	content := Hashing(bodyReq)
 	outData := baseURL + "/" + content
-	if err = s.Stor.SetData(types.URLData{
+	err = s.Stor.SetData(types.URLData{
 		ShortURL:    types.ShortURL(content),
 		OriginalURL: types.RawURL(bodyReq),
-	}); err != nil {
-		log.Println("cannot write to storage: ", err.Error())
+	})
+	if errors.Is(err, types.ErrDuplicateKey{}) {
+		shortURL, err := s.Stor.GetShortURL(types.RawURL(bodyReq))
+		if err != nil {
+			s.logger.Error("cannot get short url: " + err.Error())
+			return
+		}
+		outData = baseURL + "/" + shortURL
+		resp.WriteHeader(http.StatusConflict)
+		if _, err = resp.Write([]byte(outData)); err != nil {
+			s.logger.Error("don't send response because by " + err.Error())
+			return
+		}
+	} else {
+		s.logger.Error("cannot ")
 	}
 	if _, err = resp.Write([]byte(outData)); err != nil {
-		log.Printf("don't send response because by %s\n", err.Error())
+		s.logger.Error("don't send response because by " + err.Error())
 	}
 }
 
 // Принимает на вход сокращенный URL,
-// возвращает исходный
+// возвращает полный URL
 func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
