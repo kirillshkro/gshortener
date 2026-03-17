@@ -283,3 +283,10 @@ func (f *FileStorage) load() (err error) {
 	}
 	return
 }
+
+func (f *FileStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
+	if val, ok := f.stor[key]; ok {
+		return val, nil
+	}
+	return "", types.ErrNotFound
+}

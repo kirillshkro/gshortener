@@ -16,6 +16,11 @@ type IStorage interface {
 	Data(key types.ShortURL) (types.RawURL, error)
 	SetData(urlData types.URLData) error
 	Close() error
+	ShortURLGetter
+}
+
+type ShortURLGetter interface {
+	GetShortURL(key types.RawURL) (types.ShortURL, error)
 }
 
 func NewMemoryStorage() *MemoryStorage {
@@ -43,4 +48,13 @@ func (s *MemoryStorage) SetData(urlData types.URLData) error {
 
 func (s *MemoryStorage) Close() error {
 	return nil
+}
+
+func (s *MemoryStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
+	for k, v := range s.data {
+		if v == key {
+			return k, nil
+		}
+	}
+	return "", types.ErrNotFound
 }
