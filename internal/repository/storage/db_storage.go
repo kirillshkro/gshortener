@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
@@ -33,17 +35,29 @@ func (s *DBStorage) Data(key types.ShortURL) (types.RawURL, error) {
 }
 
 func (s *DBStorage) SetData(urlData types.URLData) error {
-	if urlData.ShortURL != "" && urlData.OriginalURL != "" {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if _, err := s.db.ExecContext(ctx, "insert into urls (short_url, original_url) values ($1, $2)",
-			urlData.ShortURL,
-			urlData.OriginalURL); err != nil {
-			return err
-		}
-		return nil
+
+	if urlData.OriginalURL == "" || urlData.ShortURL == "" {
+		return types.ErrEmptyParams
 	}
-	return types.ErrEmptyParams
+
+	if _, err := url.Parse(string(urlData.OriginalURL)); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	result, err := s.db.ExecContext(ctx, "insert into urls (short_url, original_url) values ($1, $2) on conflict (original_url) do nothing",
+		urlData.ShortURL,
+		urlData.OriginalURL)
+
+	if err != nil {
+		return fmt.Errorf("error inserting data: %w", err)
+	}
+	if rows, _ := result.RowsAffected(); rows == 0 {
+		return &types.ErrDuplicateKey{}
+	}
+
+	return nil
 }
 
 func newDBStorage(conn string) (*DBStorage, error) {
