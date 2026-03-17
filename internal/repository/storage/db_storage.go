@@ -61,6 +61,7 @@ func (s *DBStorage) SetData(urlData types.URLData) error {
 	if err != nil {
 		return fmt.Errorf("error inserting data: %w", types.NewErrDuplicateKey("OriginalUrl", string(urlData.OriginalURL)))
 	}
+	defer stmt.Close()
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("error commiting transaction: %w", err)
 	}
@@ -117,4 +118,24 @@ func (s *DBStorage) populateTables() error {
 
 func (s *DBStorage) Close() error {
 	return s.db.Close()
+}
+
+func (s *DBStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
+	var shortURL types.ShortURL
+	if key != "" {
+		stmt, err := s.db.PreparexContext(context.Background(), "select short_url from urls where original_url = $1")
+		if err != nil {
+			return "", err
+		}
+		defer stmt.Close()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if row := stmt.QueryRowContext(ctx, key); row != nil {
+			if err := row.Scan(&shortURL); err != nil {
+				return "", err
+			}
+			return shortURL, nil
+		}
+	}
+	return "", types.ErrEmptyParams
 }
