@@ -5,6 +5,7 @@ import "errors"
 var (
 	ErrEmptyParams = errors.New("empty params")
 	ErrFileOpen    = errors.New("file not opened")
+	ErrNotFound    = errors.New("key not found")
 )
 
 type ErrDuplicateKey struct {
