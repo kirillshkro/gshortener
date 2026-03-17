@@ -2,18 +2,18 @@ package storage
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/url"
 	"sync"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/kirillshkro/gshortener/internal/types"
 	_ "github.com/lib/pq"
 )
 
 type DBStorage struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 var (
@@ -46,12 +46,23 @@ func (s *DBStorage) SetData(urlData types.URLData) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	result, err := s.db.ExecContext(ctx, "insert into urls (short_url, original_url) values ($1, $2) on conflict (original_url) do nothing",
+	tx, err := s.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("error transaction: %w", err)
+	}
+	defer tx.Rollback().Error()
+	stmt, err := tx.PrepareContext(ctx, "insert into urls (short_url, original_url) values ($1, $2) on conflict (original_url) do nothing")
+	if err != nil {
+		return fmt.Errorf("error preparing statement: %w", err)
+	}
+	result, err := stmt.ExecContext(ctx,
 		urlData.ShortURL,
 		urlData.OriginalURL)
-
 	if err != nil {
 		return fmt.Errorf("error inserting data: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("error commiting transaction: %w", err)
 	}
 	if rows, _ := result.RowsAffected(); rows == 0 {
 		return &types.ErrDuplicateKey{}
@@ -61,7 +72,7 @@ func (s *DBStorage) SetData(urlData types.URLData) error {
 }
 
 func newDBStorage(conn string) (*DBStorage, error) {
-	db, err := sql.Open("postgres", conn)
+	db, err := sqlx.Open("postgres", conn)
 	if err != nil {
 		return nil, err
 	}
