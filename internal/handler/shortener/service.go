@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"log/slog"
@@ -106,6 +107,16 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 		ShortURL:    types.ShortURL(content),
 		OriginalURL: types.RawURL(bodyReq),
 	}); err != nil {
+		var eu *types.ErrUnique
+		if errors.As(err, &eu) {
+			// если URL уже существует, то возвращаем короткий URL из базы данных
+			resp.WriteHeader(http.StatusConflict)
+			shortedURL := s.ResultAddr + "/" + types.ShortURL(eu.ShortURL)
+			if _, err = resp.Write([]byte(shortedURL)); err != nil {
+				log.Println("cannot write to response: ", err.Error())
+				return
+			}
+		}
 		log.Println("cannot write to storage: ", err.Error())
 		return
 	}
