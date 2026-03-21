@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"sync"
@@ -39,7 +40,6 @@ func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 func (s *DBStorage) Create(reqData types.DataURL) error {
 	tx := s.onConflict()
 	if err := gorm.G[types.DataURL](tx).Create(context.Background(), &reqData); err != nil {
-		slog.Error("Current error: " + err.Error())
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			shortURL, err := s.shortURL(reqData.OriginalURL)
 			return &types.ErrUnique{
@@ -47,7 +47,7 @@ func (s *DBStorage) Create(reqData types.DataURL) error {
 				Err:      err,
 			}
 		}
-		return err
+		return fmt.Errorf("Current error: %w\n", err)
 	}
 	return nil
 }
