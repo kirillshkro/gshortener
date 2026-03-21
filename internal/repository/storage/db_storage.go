@@ -52,7 +52,7 @@ func (s *DBStorage) Create(reqData types.DataURL) error {
 }
 
 func newDBStorage(conn string) (*DBStorage, error) {
-	db_logger := logger.NewSlogLogger(
+	dbLogger := logger.NewSlogLogger(
 		slog.New(
 			slog.NewJSONHandler(os.Stderr, nil),
 		),
@@ -64,7 +64,7 @@ func newDBStorage(conn string) (*DBStorage, error) {
 		},
 	)
 	conf := &gorm.Config{
-		Logger:         db_logger,
+		Logger:         dbLogger,
 		PrepareStmt:    true,
 		TranslateError: true,
 	}
