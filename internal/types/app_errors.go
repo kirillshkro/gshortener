@@ -8,18 +8,15 @@ var (
 	ErrNotFound    = errors.New("key not found")
 )
 
-type ErrDuplicateKey struct {
-	Field string
-	Key   string
+type ErrUnique struct {
+	ShortURL string
+	Err      error
 }
 
-func (e ErrDuplicateKey) Error() string {
-	return "Field: " + e.Field + " with key value" + e.Key + " already exists"
+func (e *ErrUnique) Error() string {
+	return "Field with key value" + e.ShortURL + " already exists"
 }
 
-func NewErrDuplicateKey(field, key string) *ErrDuplicateKey {
-	return &ErrDuplicateKey{
-		Field: field,
-		Key:   key,
-	}
+func (e *ErrUnique) Unwrap() error {
+	return e.Err
 }

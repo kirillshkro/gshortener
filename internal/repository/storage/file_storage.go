@@ -53,11 +53,11 @@ func (f *FileStorage) Close() error {
 /*
 Возвращает значение по ключу из файла
 */
-func (f *FileStorage) Data(key types.ShortURL) (types.RawURL, error) {
+func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 	var (
-		fData types.FileData
-		err   error
-		items []types.FileData
+		fOriginalURL types.FileOriginalURL
+		err          error
+		items        []types.FileOriginalURL
 	)
 
 	if info, err := f.file.Stat(); err != nil || info.Size() == 0 {
@@ -70,9 +70,9 @@ func (f *FileStorage) Data(key types.ShortURL) (types.RawURL, error) {
 		return "", err
 	}
 
-	for _, fData = range items {
-		if key == fData.ShortURL {
-			return fData.OriginalURL, nil
+	for _, fOriginalURL = range items {
+		if key == fOriginalURL.ShortURL {
+			return fOriginalURL.OriginalURL, nil
 		}
 	}
 	return "", err
@@ -81,15 +81,15 @@ func (f *FileStorage) Data(key types.ShortURL) (types.RawURL, error) {
 /*
 Добавляет в файл пару ключ-значение
 */
-func (f *FileStorage) SetData(reqData types.URLData) (err error) {
+func (f *FileStorage) Create(reqOriginalURL types.DataURL) (err error) {
 	var (
 		buf []byte
 	)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	key := reqData.ShortURL
-	val := reqData.OriginalURL
+	key := reqOriginalURL.ShortURL
+	val := reqOriginalURL.OriginalURL
 
 	if key == "" || val == "" {
 		return types.ErrEmptyParams
@@ -98,9 +98,9 @@ func (f *FileStorage) SetData(reqData types.URLData) (err error) {
 	if f.keyExist(val) {
 		return nil
 	}
-	item := types.FileData{
+	item := types.FileOriginalURL{
 		UUID: uuid.New().String(),
-		URLData: types.URLData{
+		DataURL: types.DataURL{
 			ShortURL:    key,
 			OriginalURL: val,
 		},
@@ -149,16 +149,16 @@ func (f *FileStorage) GetCounter() (counter int64, err error) {
 }
 
 func (f *FileStorage) AddRecord(r io.Reader) (err error) {
-	item := types.FileData{}
+	item := types.FileOriginalURL{}
 	if err = json.NewDecoder(r).Decode(&item); err != nil {
 		return err
 	}
 
-	rec := types.URLData{
+	rec := types.DataURL{
 		ShortURL:    item.ShortURL,
 		OriginalURL: item.OriginalURL,
 	}
-	return f.SetData(rec)
+	return f.Create(rec)
 }
 
 func (f *FileStorage) keyExist(key types.RawURL) bool {
@@ -258,8 +258,8 @@ func (f *FileStorage) load() (err error) {
 	}
 
 	var (
-		item    types.FileData
-		content []types.FileData
+		item    types.FileOriginalURL
+		content []types.FileOriginalURL
 		fInfo   os.FileInfo
 	)
 

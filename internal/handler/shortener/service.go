@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"io"
 	"log"
 	"log/slog"
@@ -102,27 +101,16 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-Type", "text/plain")
 	resp.WriteHeader(http.StatusCreated)
 	content := Hashing(bodyReq)
-	outData := baseURL + "/" + content
-	err = s.Stor.SetData(types.URLData{
+	outOriginalURL := baseURL + "/" + content
+	if err = s.Stor.Create(types.DataURL{
 		ShortURL:    types.ShortURL(content),
 		OriginalURL: types.RawURL(bodyReq),
-	})
-	if errors.Is(err, types.ErrDuplicateKey{}) {
-		shortURL, err := s.Stor.GetShortURL(types.RawURL(bodyReq))
-		if err != nil {
-			s.logger.Error("cannot get short url: " + err.Error())
-			return
-		}
-		outData = baseURL + "/" + shortURL
-		resp.WriteHeader(http.StatusConflict)
-		if _, err = resp.Write([]byte(outData)); err != nil {
-			s.logger.Error("don't send response because by " + err.Error())
-			return
-		}
-	} else {
-		s.logger.Error("cannot ")
+	}); err != nil {
+		log.Println("cannot write to storage: ", err.Error())
+		return
 	}
-	if _, err = resp.Write([]byte(outData)); err != nil {
+
+	if _, err = resp.Write([]byte(outOriginalURL)); err != nil {
 		s.logger.Error("don't send response because by " + err.Error())
 	}
 }
@@ -140,7 +128,7 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	location, err := s.Stor.Data(types.ShortURL(id))
+	location, err := s.Stor.OriginalURL(types.ShortURL(id))
 	if err != nil {
 		http.Error(resp, "not found", http.StatusNotFound)
 		return
@@ -174,7 +162,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	for _, item = range bodyReq {
 		hashURL := Hashing([]byte(item.OriginalURL))
 		//сохраняем в хранилище
-		if err = s.Stor.SetData(types.URLData{
+		if err = s.Stor.Create(types.DataURL{
 			ShortURL:    hashURL,
 			OriginalURL: item.OriginalURL,
 		}); err != nil {

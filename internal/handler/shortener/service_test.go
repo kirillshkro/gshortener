@@ -37,7 +37,7 @@ func (s *ServiceTestsSuite) TearDownSuite() {
 }
 
 func (s *ServiceTestsSuite) Test_URLEncode() {
-	const testData = "https://practicum.yandex.ru"
+	const testOriginalURL = "https://practicum.yandex.ru"
 	tests := []struct {
 		name   string
 		method string
@@ -48,29 +48,29 @@ func (s *ServiceTestsSuite) Test_URLEncode() {
 		{
 			name:   "POST request",
 			method: http.MethodPost,
-			uri:    testData,
-			hash:   Hashing([]byte(testData)),
+			uri:    testOriginalURL,
+			hash:   Hashing([]byte(testOriginalURL)),
 			code:   http.StatusCreated,
 		},
 		{
 			name:   "GET request",
 			method: http.MethodGet,
-			uri:    testData,
-			hash:   Hashing([]byte(testData)),
+			uri:    testOriginalURL,
+			hash:   Hashing([]byte(testOriginalURL)),
 			code:   http.StatusBadRequest,
 		},
 		{
 			name:   "PUT request",
 			method: http.MethodPut,
-			uri:    testData,
-			hash:   Hashing([]byte(testData)),
+			uri:    testOriginalURL,
+			hash:   Hashing([]byte(testOriginalURL)),
 			code:   http.StatusBadRequest,
 		},
 		{
 			name:   "PATCH request",
 			method: http.MethodPatch,
-			uri:    testData,
-			hash:   Hashing([]byte(testData)),
+			uri:    testOriginalURL,
+			hash:   Hashing([]byte(testOriginalURL)),
 			code:   http.StatusBadRequest,
 		},
 	}
@@ -100,7 +100,7 @@ func (s *ServiceTestsSuite) Test_URLEncode() {
 func (s *ServiceTestsSuite) Test_URLDecode() {
 	const testURL = `https://practicum.yandex.ru`
 	id := Hashing([]byte(testURL))
-	if err := s.service.Stor.SetData(types.URLData{
+	if err := s.service.Stor.Create(types.DataURL{
 		ShortURL:    types.ShortURL(id),
 		OriginalURL: types.RawURL(testURL),
 	}); err != nil {
@@ -160,7 +160,7 @@ func (s *ServiceTestsSuite) Test_URLDecode() {
 func (s *ServiceTestsSuite) Test_CreateShortURL() {
 	var (
 		mockResp bytes.Buffer
-		mockReq  types.RequestData
+		mockReq  types.RequestOriginalURL
 	)
 	testURL := types.RawURL("https://weather.yandex.ru")
 	mockReq.URL = testURL
@@ -170,10 +170,10 @@ func (s *ServiceTestsSuite) Test_CreateShortURL() {
 	}
 	id := Hashing([]byte(testURL))
 	shortedURL := types.ShortURL(s.server.URL) + "/" + id
-	respData := types.ResponseData{
+	respOriginalURL := types.ResponseOriginalURL{
 		Result: shortedURL,
 	}
-	if err := json.NewEncoder(&mockResp).Encode(respData); err != nil {
+	if err := json.NewEncoder(&mockResp).Encode(respOriginalURL); err != nil {
 		s.T().Fatal(err)
 	}
 	tests := []struct {
@@ -218,7 +218,7 @@ func (s *ServiceTestsSuite) Test_CreateShortURL() {
 }
 
 func (s *ServiceTestsSuite) Test_BatchCreateShortURL() {
-	inputTestData := []types.BatchRequest{
+	inputTestOriginalURL := []types.BatchRequest{
 		{
 			CorrelationID: uuid.NewString(),
 			OriginalURL:   "https://practicum.yandex.ru",
@@ -231,24 +231,24 @@ func (s *ServiceTestsSuite) Test_BatchCreateShortURL() {
 
 	reqBody := bytes.NewBuffer([]byte{})
 
-	if err := json.NewEncoder(reqBody).Encode(inputTestData); err != nil {
+	if err := json.NewEncoder(reqBody).Encode(inputTestOriginalURL); err != nil {
 		s.T().Fatal(err)
 	}
 
-	expectedData := []types.BatchResponse{
+	expectedOriginalURL := []types.BatchResponse{
 		{
-			CorrelationID: inputTestData[0].CorrelationID,
+			CorrelationID: inputTestOriginalURL[0].CorrelationID,
 			ShortURL:      s.service.ResultAddr + "/" + Hashing([]byte("https://practicum.yandex.ru")),
 		},
 		{
-			CorrelationID: inputTestData[1].CorrelationID,
+			CorrelationID: inputTestOriginalURL[1].CorrelationID,
 			ShortURL:      s.service.ResultAddr + "/" + Hashing([]byte("https://weather.google.com")),
 		},
 	}
 
 	expectedResp := bytes.NewBuffer([]byte{})
 
-	if err := json.NewEncoder(expectedResp).Encode(expectedData); err != nil {
+	if err := json.NewEncoder(expectedResp).Encode(expectedOriginalURL); err != nil {
 		s.T().Fatal(err)
 	}
 

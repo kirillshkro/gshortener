@@ -30,12 +30,12 @@ func TestHandlerWithLog(t *testing.T) {
 	assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
 	assert.NotZero(t, elapsed)
 
-	reqData := types.RequestData{
+	reqOriginalURL := types.RequestOriginalURL{
 		URL: "https://weather.google.com",
 	}
 
 	body := bytes.NewBuffer(nil)
-	if err := json.NewEncoder(body).Encode(reqData); err != nil {
+	if err := json.NewEncoder(body).Encode(reqOriginalURL); err != nil {
 		t.Fatal(err)
 	}
 	req = httptest.NewRequest(http.MethodPost, "/api/shorten", body)

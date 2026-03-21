@@ -2,18 +2,21 @@ package storage
 
 import (
 	"context"
-	"fmt"
-	"net/url"
+	"errors"
+	"log/slog"
+	"os"
 	"sync"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/kirillshkro/gshortener/internal/types"
-	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 )
 
 type DBStorage struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 var (
@@ -21,59 +24,51 @@ var (
 	dbonce     sync.Once
 )
 
-func (s *DBStorage) Data(key types.ShortURL) (types.RawURL, error) {
-	var originalURL types.RawURL
-	if key != "" {
-		if row := s.db.QueryRowContext(context.Background(), "select original_url from urls where short_url = $1", key); row != nil {
-			if err := row.Scan(&originalURL); err != nil {
-				return "", err
-			}
-			return originalURL, nil
-		}
+func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
+	if shortURL == "" {
+		return "", types.ErrEmptyParams
 	}
-	return "", types.ErrEmptyParams
-}
-
-func (s *DBStorage) SetData(urlData types.URLData) error {
-
-	if urlData.OriginalURL == "" || urlData.ShortURL == "" {
-		return types.ErrEmptyParams
-	}
-
-	if _, err := url.Parse(string(urlData.OriginalURL)); err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	tx, err := s.db.BeginTxx(ctx, nil)
+	data, err := gorm.G[types.DataURL](s.db).Where("short_url = ?", shortURL).First(ctx)
 	if err != nil {
-		return fmt.Errorf("error transaction: %w", err)
+		return "", err
 	}
-	defer tx.Rollback().Error()
-	stmt, err := tx.PrepareContext(ctx, "insert into urls (short_url, original_url) values ($1, $2) on conflict (original_url) do nothing")
-	if err != nil {
-		return fmt.Errorf("error preparing statement: %w", err)
-	}
-	result, err := stmt.ExecContext(ctx,
-		urlData.ShortURL,
-		urlData.OriginalURL)
-	if err != nil {
-		return fmt.Errorf("error inserting data: %w", types.NewErrDuplicateKey("OriginalUrl", string(urlData.OriginalURL)))
-	}
-	defer stmt.Close()
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("error commiting transaction: %w", err)
-	}
-	if rows, _ := result.RowsAffected(); rows == 0 {
-		return &types.ErrDuplicateKey{}
-	}
+	return data.OriginalURL, nil
+}
 
+func (s *DBStorage) Create(reqData types.DataURL) error {
+	if err := s.onConflict().Create(&reqData).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			shortURL, err := s.shortURL(reqData.OriginalURL)
+			return &types.ErrUnique{
+				ShortURL: string(shortURL),
+				Err:      err,
+			}
+		}
+		return err
+	}
 	return nil
 }
 
 func newDBStorage(conn string) (*DBStorage, error) {
-	db, err := sqlx.Open("postgres", conn)
+	db_logger := logger.NewSlogLogger(
+		slog.New(
+			slog.NewJSONHandler(os.Stderr, nil),
+		),
+		logger.Config{
+			LogLevel:             logger.Info,
+			SlowThreshold:        500 * time.Millisecond,
+			ParameterizedQueries: true,
+			Colorful:             true,
+		},
+	)
+	conf := &gorm.Config{
+		Logger:         db_logger,
+		PrepareStmt:    true,
+		TranslateError: true,
+	}
+	db, err := gorm.Open(postgres.Open(conn), conf)
 	if err != nil {
 		return nil, err
 	}
@@ -103,39 +98,32 @@ func GetDBStorage(conn string) (*DBStorage, error) {
 func (s *DBStorage) populateTables() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if _, err := s.db.ExecContext(ctx,
-		"create table if not exists urls (id serial primary key, short_url text not null, original_url text not null);"); err != nil {
-		return err
-	}
-	if _, err := s.db.ExecContext(ctx, "create unique index if not exists original_url_idx on urls (original_url);"); err != nil {
-		return err
-	}
-	if _, err := s.db.ExecContext(ctx, "create unique index if not exists short_url_idx on urls (short_url);"); err != nil {
+	if err := s.db.WithContext(ctx).AutoMigrate(&types.DataURL{}); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *DBStorage) Close() error {
-	return s.db.Close()
+	return nil
 }
 
-func (s *DBStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
-	var shortURL types.ShortURL
-	if key != "" {
-		stmt, err := s.db.PreparexContext(context.Background(), "select short_url from urls where original_url = $1")
-		if err != nil {
-			return "", err
-		}
-		defer stmt.Close()
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if row := stmt.QueryRowContext(ctx, key); row != nil {
-			if err := row.Scan(&shortURL); err != nil {
-				return "", err
-			}
-			return shortURL, nil
-		}
+func (s *DBStorage) shortURL(originalURL types.RawURL) (types.ShortURL, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	urlOriginalURL, err := gorm.G[types.DataURL](s.db).Where("original_url = ?", originalURL).First(ctx)
+	if err != nil {
+		return "", err
 	}
-	return "", types.ErrEmptyParams
+	return urlOriginalURL.ShortURL, nil
+}
+
+func (s *DBStorage) onConflict() *gorm.DB {
+	return s.db.Clauses(
+		clause.OnConflict{
+			Columns:   []clause.Column{{Name: "original_url"}},
+			DoNothing: true,
+		},
+		clause.Returning{Columns: []clause.Column{{Name: "short_url"}}},
+	)
 }

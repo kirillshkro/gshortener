@@ -13,14 +13,9 @@ type MemoryStorage struct {
 
 //go:generate mockgen -destination internal/mocks/mock_dbstorage.go -package mocks ./internal/repository/storage IStorage
 type IStorage interface {
-	Data(key types.ShortURL) (types.RawURL, error)
-	SetData(urlData types.URLData) error
+	OriginalURL(key types.ShortURL) (types.RawURL, error)
+	Create(urlOriginalURL types.DataURL) error
 	Close() error
-	ShortURLGetter
-}
-
-type ShortURLGetter interface {
-	GetShortURL(key types.RawURL) (types.ShortURL, error)
 }
 
 func NewMemoryStorage() *MemoryStorage {
@@ -29,15 +24,15 @@ func NewMemoryStorage() *MemoryStorage {
 	}
 }
 
-func (s *MemoryStorage) Data(key types.ShortURL) (types.RawURL, error) {
+func (s *MemoryStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 	return s.data[key], nil
 }
 
-func (s *MemoryStorage) SetData(urlData types.URLData) error {
+func (s *MemoryStorage) Create(urlOriginalURL types.DataURL) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	key := urlData.ShortURL
-	val := urlData.OriginalURL
+	key := urlOriginalURL.ShortURL
+	val := urlOriginalURL.OriginalURL
 	if key != "" && val != "" {
 		if _, exist := s.data[key]; !exist {
 			s.data[key] = val

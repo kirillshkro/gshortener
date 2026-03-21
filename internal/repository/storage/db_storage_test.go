@@ -24,67 +24,67 @@ func (d *DBStorageTestSuite) TearDownSuite() {
 	d.ctrl.Finish()
 }
 
-func (d *DBStorageTestSuite) TestDBStorage_SetData() {
+func (d *DBStorageTestSuite) TestDBStorage_Create() {
 	// Настройка ожидаемого поведения
-	expectedURLData := types.URLData{
+	expectedURLOriginalURL := types.DataURL{
 		ShortURL:    "abc123",
 		OriginalURL: "https://example.com",
 	}
-	d.mockStorage.EXPECT().SetData(expectedURLData).Return(nil)
+	d.mockStorage.EXPECT().Create(expectedURLOriginalURL).Return(nil)
 
-	err := d.mockStorage.SetData(expectedURLData)
+	err := d.mockStorage.Create(expectedURLOriginalURL)
 
 	d.Assert().NoError(err)
 }
 
-func (d *DBStorageTestSuite) TestDBStorage_SetData_EmptyShortURL() {
+func (d *DBStorageTestSuite) TestDBStorage_Create_EmptyShortURL() {
 
-	urlData := types.URLData{
+	urlOriginalURL := types.DataURL{
 		ShortURL:    "",
 		OriginalURL: "https://example.com",
 	}
-	d.mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
+	d.mockStorage.EXPECT().Create(urlOriginalURL).Return(types.ErrEmptyParams)
 
-	err := d.mockStorage.SetData(urlData)
+	err := d.mockStorage.Create(urlOriginalURL)
 
 	d.Assert().Error(err, "ожидалась ошибка при пустом ShortURL")
 }
 
-func (d *DBStorageTestSuite) TestDBStorage_SetData_EmptyOriginalURL() {
+func (d *DBStorageTestSuite) TestDBStorage_Create_EmptyOriginalURL() {
 
-	urlData := types.URLData{
+	urlOriginalURL := types.DataURL{
 		ShortURL:    "abc123",
 		OriginalURL: "",
 	}
 
-	d.mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
+	d.mockStorage.EXPECT().Create(urlOriginalURL).Return(types.ErrEmptyParams)
 
-	err := d.mockStorage.SetData(urlData)
+	err := d.mockStorage.Create(urlOriginalURL)
 
 	d.Assert().Error(err, "ожидалась ошибка при пустом OriginalURL")
 }
 
-func (d *DBStorageTestSuite) TestDBStorage_SetData_BothEmpty() {
+func (d *DBStorageTestSuite) TestDBStorage_Create_BothEmpty() {
 
-	urlData := types.URLData{
+	urlOriginalURL := types.DataURL{
 		ShortURL:    "",
 		OriginalURL: "",
 	}
 
-	d.mockStorage.EXPECT().SetData(urlData).Return(types.ErrEmptyParams)
+	d.mockStorage.EXPECT().Create(urlOriginalURL).Return(types.ErrEmptyParams)
 
-	err := d.mockStorage.SetData(urlData)
+	err := d.mockStorage.Create(urlOriginalURL)
 
 	d.Assert().Error(err, "ожидалась ошибка при пустых полях")
 }
 
-func (d *DBStorageTestSuite) TestDBStorage_Data() {
+func (d *DBStorageTestSuite) TestDBStorage_OriginalURL() {
 
 	shortURL := types.ShortURL("abc123")
 	expectedOriginalURL := types.RawURL("https://example.com")
-	d.mockStorage.EXPECT().Data(shortURL).Return(expectedOriginalURL, nil)
+	d.mockStorage.EXPECT().OriginalURL(shortURL).Return(expectedOriginalURL, nil)
 
-	originalURL, err := d.mockStorage.Data(shortURL)
+	originalURL, err := d.mockStorage.OriginalURL(shortURL)
 
 	d.Assert().NoError(err)
 	d.Assert().Equal(expectedOriginalURL, originalURL)
