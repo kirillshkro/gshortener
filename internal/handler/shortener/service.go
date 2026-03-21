@@ -100,7 +100,6 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 		log.Println("cannot read request: ", err.Error())
 	}
 	resp.Header().Set("Content-Type", "text/plain")
-	resp.WriteHeader(http.StatusCreated)
 	content := Hashing(bodyReq)
 	outOriginalURL := baseURL + "/" + content
 	if err = s.Stor.Create(types.DataURL{
@@ -120,7 +119,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 		log.Println("cannot write to storage: ", err.Error())
 		return
 	}
-
+	resp.WriteHeader(http.StatusCreated)
 	if _, err = resp.Write([]byte(outOriginalURL)); err != nil {
 		s.logger.Error("don't send response because by " + err.Error())
 	}
