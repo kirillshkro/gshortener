@@ -58,7 +58,7 @@ func newDBStorage(conn string) (*DBStorage, error) {
 		logger.Config{
 			LogLevel:             logger.Info,
 			SlowThreshold:        500 * time.Millisecond,
-			ParameterizedQueries: true,
+			ParameterizedQueries: false,
 			Colorful:             true,
 		},
 	)
