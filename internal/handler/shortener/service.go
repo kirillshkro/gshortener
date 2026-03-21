@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -97,7 +96,9 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	baseURL := s.ResultAddr
 	bodyReq, err := io.ReadAll(req.Body)
 	if err != nil {
-		log.Println("cannot read request: ", err.Error())
+		s.logger.Error("cannot read request: " + err.Error())
+		http.Error(resp, "bad request", http.StatusBadRequest)
+		return
 	}
 	resp.Header().Set("Content-Type", "text/plain")
 	content := Hashing(bodyReq)
@@ -112,11 +113,11 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 			resp.WriteHeader(http.StatusConflict)
 			shortedURL := s.ResultAddr + "/" + types.ShortURL(eu.ShortURL)
 			if _, err = resp.Write([]byte(shortedURL)); err != nil {
-				log.Println("cannot write to response: ", err.Error())
+				s.logger.Error("cannot write to response: " + err.Error())
 				return
 			}
 		}
-		log.Println("cannot write to storage: ", err.Error())
+		s.logger.Error("cannot write to storage: " + err.Error())
 		return
 	}
 	resp.WriteHeader(http.StatusCreated)

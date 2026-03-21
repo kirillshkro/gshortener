@@ -38,8 +38,8 @@ func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 
 func (s *DBStorage) Create(reqData types.DataURL) error {
 	if err := gorm.G[types.DataURL](s.db).Create(context.Background(), &reqData); err != nil {
-		slog.Warn("Current error: " + err.Error())
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
+		slog.Error("Current error: " + err.Error())
+		if errors.Is(err, gorm.ErrCheckConstraintViolated) {
 			shortURL, err := s.shortURL(reqData.OriginalURL)
 			return &types.ErrUnique{
 				ShortURL: string(shortURL),
