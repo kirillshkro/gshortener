@@ -28,9 +28,8 @@ func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 	if shortURL == "" {
 		return "", types.ErrEmptyParams
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	data, err := gorm.G[types.DataURL](s.db).Where("short_url = ?", shortURL).First(ctx)
+
+	data, err := gorm.G[types.DataURL](s.db).Where("short_url = ?", shortURL).First(context.Background())
 	if err != nil {
 		return "", err
 	}
