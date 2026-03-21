@@ -2,6 +2,7 @@ package shortener
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -32,6 +33,16 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 		ShortURL:    types.ShortURL(id),
 		OriginalURL: types.RawURL(data.URL),
 	}); err != nil {
+		var eu *types.ErrUnique
+		if errors.As(err, &eu) {
+			// если URL уже существует, то возвращаем короткий URL из базы данных
+			resp.WriteHeader(http.StatusConflict)
+			shortedURL := s.ResultAddr + "/" + types.ShortURL(eu.ShortURL)
+			if _, err = resp.Write([]byte(shortedURL)); err != nil {
+				log.Println("cannot write to response: ", err.Error())
+				return
+			}
+		}
 		log.Println("cannot write to storage: ", err.Error())
 	}
 	resp.Header().Set("Content-Type", "application/json")
