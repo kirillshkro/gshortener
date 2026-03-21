@@ -40,7 +40,7 @@ func (s *DBStorage) Create(reqData types.DataURL) error {
 	tx := s.onConflict()
 	if err := gorm.G[types.DataURL](tx).Create(context.Background(), &reqData); err != nil {
 		slog.Error("Current error: " + err.Error())
-		if errors.Is(err, gorm.ErrCheckConstraintViolated) {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			shortURL, err := s.shortURL(reqData.OriginalURL)
 			return &types.ErrUnique{
 				ShortURL: string(shortURL),
