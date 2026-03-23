@@ -35,10 +35,10 @@ func (s *HandlerLogTestSuite) TestHandlerWithLog() {
 	start := time.Now()
 	wrapped.ServeHTTP(w, req)
 	elapsed := time.Since(start)
-	resp := w.Result()
-	defer resp.Body.Close()
+	resp1 := w.Result()
+	defer resp1.Body.Close()
 
-	s.Assert().Equal(http.StatusTemporaryRedirect, resp.StatusCode)
+	s.Assert().Equal(http.StatusTemporaryRedirect, resp1.StatusCode)
 	s.Assert().NotZero(elapsed)
 
 	reqData := types.RequestData{
@@ -57,11 +57,11 @@ func (s *HandlerLogTestSuite) TestHandlerWithLog() {
 	wrapped = HandlerWithLog(EncodeHandler(s.service))
 	wrapped.ServeHTTP(w, req)
 	elapsed = time.Since(start)
-	resp = w.Result()
-	defer resp.Body.Close()
+	resp2 := w.Result()
+	defer resp2.Body.Close()
 	s.Assert().Condition(func() bool {
-		return resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict
-	}, "expected status code 201 or 409, got %d", resp.StatusCode)
+		return resp2.StatusCode == http.StatusCreated || resp2.StatusCode == http.StatusConflict
+	}, "expected status code 201 or 409, got %d", resp2.StatusCode)
 	s.Assert().Greater(elapsed, time.Millisecond*0)
 }
 
