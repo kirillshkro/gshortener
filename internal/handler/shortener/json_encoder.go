@@ -29,6 +29,7 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	}
 	id := Hashing([]byte(data.URL))
 	respData.Result = s.ResultAddr + "/" + id
+	s.logger.Info("URL: " + string(s.ResultAddr))
 	if err := s.Stor.Create(types.DataURL{
 		ShortURL:    types.ShortURL(id),
 		OriginalURL: types.RawURL(data.URL),
@@ -39,8 +40,10 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 			// если URL уже существует, то возвращаем короткий URL из базы данных
 			resp.WriteHeader(http.StatusConflict)
 			shortedURL := s.ResultAddr + "/" + types.ShortURL(eu.ShortURL)
-			if _, err = resp.Write([]byte(shortedURL)); err != nil {
-				log.Println("cannot write to response: ", err.Error())
+			respData.Result = shortedURL
+			if err := json.NewEncoder(resp).Encode(respData); err != nil {
+				log.Println("cannot encode response: ", err.Error())
+				resp.WriteHeader(http.StatusBadRequest)
 				return
 			}
 			return
