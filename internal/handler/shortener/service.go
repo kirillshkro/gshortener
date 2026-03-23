@@ -116,6 +116,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 				s.logger.Error("cannot write to response: " + err.Error())
 				return
 			}
+			return
 		}
 		s.logger.Error("cannot write to storage: " + err.Error())
 		return

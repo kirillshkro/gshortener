@@ -15,8 +15,8 @@ type JSONEncoder interface {
 
 func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	var (
-		data            types.RequestOriginalURL
-		respOriginalURL types.ResponseOriginalURL
+		data     types.RequestData
+		respData types.ResponseData
 	)
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
@@ -28,7 +28,7 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	id := Hashing([]byte(data.URL))
-	respOriginalURL.Result = s.ResultAddr + "/" + id
+	respData.Result = s.ResultAddr + "/" + id
 	if err := s.Stor.Create(types.DataURL{
 		ShortURL:    types.ShortURL(id),
 		OriginalURL: types.RawURL(data.URL),
@@ -42,12 +42,13 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 				log.Println("cannot write to response: ", err.Error())
 				return
 			}
+			return
 		}
 		log.Println("cannot write to storage: ", err.Error())
 	}
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(resp).Encode(respOriginalURL); err != nil {
+	if err := json.NewEncoder(resp).Encode(respData); err != nil {
 		log.Println("cannot encode response: ", err.Error())
 		resp.WriteHeader(http.StatusBadRequest)
 		return

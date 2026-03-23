@@ -43,7 +43,8 @@ func (s *DBStorage) Create(reqData types.DataURL) error {
 		if errors.Is(err, gorm.ErrCheckConstraintViolated) {
 			shortURL, err := s.shortURL(reqData.OriginalURL)
 			return &types.ErrUnique{
-				ShortURL: string(shortURL),
+				CauseURL: reqData.OriginalURL,
+				ShortURL: shortURL,
 				Err:      err,
 			}
 		}

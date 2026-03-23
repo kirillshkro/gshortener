@@ -11,16 +11,16 @@ type DataURL struct {
 	OriginalURL RawURL   `json:"original_url" gorm:"not null;uniqueIndex"`
 }
 
-type FileOriginalURL struct {
+type FileData struct {
 	UUID string `json:"uuid"`
 	DataURL
 }
 
-type RequestOriginalURL struct {
+type RequestData struct {
 	URL RawURL `json:"url"`
 }
 
-type ResponseOriginalURL struct {
+type ResponseData struct {
 	Result ShortURL `json:"result"`
 }
 

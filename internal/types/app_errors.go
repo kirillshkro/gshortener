@@ -1,6 +1,8 @@
 package types
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrEmptyParams = errors.New("empty params")
@@ -9,12 +11,13 @@ var (
 )
 
 type ErrUnique struct {
-	ShortURL string
+	CauseURL RawURL
+	ShortURL ShortURL
 	Err      error
 }
 
 func (e *ErrUnique) Error() string {
-	return "Field with key value" + e.ShortURL + " already exists"
+	return "Field with key value: " + string(e.CauseURL) + " already exists"
 }
 
 func (e *ErrUnique) Unwrap() error {

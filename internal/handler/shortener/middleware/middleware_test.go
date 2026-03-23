@@ -10,13 +10,24 @@ import (
 
 	"github.com/kirillshkro/gshortener/internal/handler/shortener"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/kirillshkro/gshortener/pkg/urlgen"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestHandlerWithLog(t *testing.T) {
-	service := shortener.NewService()
+type HandlerLogTestSuite struct {
+	suite.Suite
+	service *shortener.Service
+}
 
-	wrapped := HandlerWithLog(DecodeHandler(service))
+func (s *HandlerLogTestSuite) SetupSuite() {
+	s.service = shortener.NewService()
+}
+
+func (s *HandlerLogTestSuite) TearDownSuite() {
+}
+
+func (s *HandlerLogTestSuite) TestHandlerWithLog() {
+	wrapped := HandlerWithLog(DecodeHandler(s.service))
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	w := httptest.NewRecorder()
@@ -27,29 +38,33 @@ func TestHandlerWithLog(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
-	assert.NotZero(t, elapsed)
+	s.Assert().Equal(http.StatusTemporaryRedirect, resp.StatusCode)
+	s.Assert().NotZero(elapsed)
 
-	reqOriginalURL := types.RequestOriginalURL{
-		URL: "https://weather.google.com",
+	reqOriginalURL := types.RequestData{
+		URL: types.RawURL(urlgen.GenerateURL("https://base.com")),
 	}
 
 	body := bytes.NewBuffer(nil)
 	if err := json.NewEncoder(body).Encode(reqOriginalURL); err != nil {
-		t.Fatal(err)
+		s.T().Fatal(err)
 	}
 	req = httptest.NewRequest(http.MethodPost, "/api/shorten", body)
 	w = httptest.NewRecorder()
 
 	start = time.Now()
 
-	wrapped = HandlerWithLog(EncodeHandler(service))
+	wrapped = HandlerWithLog(EncodeHandler(s.service))
 	wrapped.ServeHTTP(w, req)
 	elapsed = time.Since(start)
 	resp = w.Result()
 	defer resp.Body.Close()
+	s.Assert().Condition(func() bool {
+		return resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict
+	}, "expected status code 201 or 409, got %d", resp.StatusCode)
+	s.Assert().Greater(elapsed, time.Millisecond*0)
+}
 
-	if assert.Equal(t, http.StatusCreated, resp.StatusCode) {
-		assert.Greater(t, elapsed, time.Millisecond*0)
-	}
+func TestMain(t *testing.T) {
+	suite.Run(t, new(HandlerLogTestSuite))
 }

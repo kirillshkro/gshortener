@@ -40,11 +40,6 @@ func (s *storageOriginalURLSuite) Test_StorageCreate() {
 	})
 	s.Require().NoError(err)
 	err = s.fs.Create(types.DataURL{
-		ShortURL:    "test0",
-		OriginalURL: "testx0",
-	})
-	s.Require().NoError(err)
-	err = s.fs.Create(types.DataURL{
 		ShortURL:    "test1",
 		OriginalURL: "testx1",
 	})

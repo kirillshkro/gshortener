@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/kirillshkro/gshortener/internal/types"
@@ -28,14 +29,20 @@ func (s *MemoryStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 	return s.data[key], nil
 }
 
-func (s *MemoryStorage) Create(urlOriginalURL types.DataURL) error {
+func (s *MemoryStorage) Create(req types.DataURL) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	key := urlOriginalURL.ShortURL
-	val := urlOriginalURL.OriginalURL
+	key := req.ShortURL
+	val := req.OriginalURL
 	if key != "" && val != "" {
 		if _, exist := s.data[key]; !exist {
 			s.data[key] = val
+		} else {
+			return &types.ErrUnique{
+				CauseURL: val,
+				ShortURL: key,
+				Err:      fmt.Errorf("error duplicate value %s\n", val),
+			}
 		}
 	}
 	return nil

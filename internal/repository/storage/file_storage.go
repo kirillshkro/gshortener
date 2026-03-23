@@ -55,9 +55,9 @@ func (f *FileStorage) Close() error {
 */
 func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 	var (
-		fOriginalURL types.FileOriginalURL
+		fOriginalURL types.FileData
 		err          error
-		items        []types.FileOriginalURL
+		items        []types.FileData
 	)
 
 	if info, err := f.file.Stat(); err != nil || info.Size() == 0 {
@@ -81,25 +81,29 @@ func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 /*
 Добавляет в файл пару ключ-значение
 */
-func (f *FileStorage) Create(reqOriginalURL types.DataURL) (err error) {
+func (f *FileStorage) Create(req types.DataURL) (err error) {
 	var (
 		buf []byte
 	)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	key := reqOriginalURL.ShortURL
-	val := reqOriginalURL.OriginalURL
+	key := req.ShortURL
+	val := req.OriginalURL
 
 	if key == "" || val == "" {
 		return types.ErrEmptyParams
 	}
 
 	if f.keyExist(val) {
-		return nil
+		return &types.ErrUnique{
+			CauseURL: val,
+			ShortURL: key,
+			Err:      fmt.Errorf("error duplicate value %s\n", val),
+		}
 	}
-	item := types.FileOriginalURL{
-		UUID: uuid.New().String(),
+	item := types.FileData{
+		UUID: uuid.NewString(),
 		DataURL: types.DataURL{
 			ShortURL:    key,
 			OriginalURL: val,
@@ -149,7 +153,7 @@ func (f *FileStorage) GetCounter() (counter int64, err error) {
 }
 
 func (f *FileStorage) AddRecord(r io.Reader) (err error) {
-	item := types.FileOriginalURL{}
+	item := types.FileData{}
 	if err = json.NewDecoder(r).Decode(&item); err != nil {
 		return err
 	}
@@ -258,8 +262,8 @@ func (f *FileStorage) load() (err error) {
 	}
 
 	var (
-		item    types.FileOriginalURL
-		content []types.FileOriginalURL
+		item    types.FileData
+		content []types.FileData
 		fInfo   os.FileInfo
 	)
 
