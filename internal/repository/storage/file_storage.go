@@ -13,10 +13,12 @@ import (
 )
 
 type FileStorage struct {
-	file  *os.File
-	mu    sync.Mutex
+	file *os.File
+	mu   sync.Mutex
+	//используется для того, чтобы не искать по всему файлу имеющееся значение
 	index map[types.RawURL]bool
-	stor  map[types.RawURL]types.ShortURL
+	//Хранит пары ключ-значение в памяти
+	stor map[types.RawURL]types.ShortURL
 }
 
 var (
