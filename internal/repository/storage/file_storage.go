@@ -99,7 +99,7 @@ func (f *FileStorage) Create(req types.DataURL) (err error) {
 		return &types.ErrUnique{
 			CauseURL: val,
 			ShortURL: key,
-			Err:      fmt.Errorf("error duplicate value %s\n", val),
+			Err:      fmt.Errorf("error duplicate value %s", val),
 		}
 	}
 	item := types.FileData{

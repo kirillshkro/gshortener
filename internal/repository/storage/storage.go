@@ -41,7 +41,7 @@ func (s *MemoryStorage) Create(req types.DataURL) error {
 			return &types.ErrUnique{
 				CauseURL: val,
 				ShortURL: key,
-				Err:      fmt.Errorf("error duplicate value %s\n", val),
+				Err:      fmt.Errorf("error duplicate value %s", val),
 			}
 		}
 	}
