@@ -50,14 +50,14 @@ func (s *HandlerLogTestSuite) TestHandlerWithLog() {
 		s.T().Fatal(err)
 	}
 	req = httptest.NewRequest(http.MethodPost, "/api/shorten", body)
-	w = httptest.NewRecorder()
+	w2 := httptest.NewRecorder()
 
 	start = time.Now()
 
 	wrapped = HandlerWithLog(EncodeHandler(s.service))
-	wrapped.ServeHTTP(w, req)
+	wrapped.ServeHTTP(w2, req)
 	elapsed = time.Since(start)
-	resp2 := w.Result()
+	resp2 := w2.Result()
 	defer resp2.Body.Close()
 	s.Assert().Condition(func() bool {
 		return resp2.StatusCode == http.StatusCreated || resp2.StatusCode == http.StatusConflict
