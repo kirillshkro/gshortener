@@ -111,6 +111,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 		if errors.As(err, &eu) {
 			// если URL уже существует, то возвращаем короткий URL из базы данных
 			resp.WriteHeader(http.StatusConflict)
+			s.logger.Info("URL already exists")
 			shortedURL := s.ResultAddr + "/" + types.ShortURL(eu.ShortURL)
 			if _, err = resp.Write([]byte(shortedURL)); err != nil {
 				s.logger.Error("cannot write to response: " + err.Error())
