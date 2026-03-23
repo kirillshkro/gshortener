@@ -35,6 +35,7 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	}); err != nil {
 		var eu *types.ErrUnique
 		if errors.As(err, &eu) {
+			resp.Header().Set("Content-Type", "application/json")
 			// если URL уже существует, то возвращаем короткий URL из базы данных
 			resp.WriteHeader(http.StatusConflict)
 			shortedURL := s.ResultAddr + "/" + types.ShortURL(eu.ShortURL)
