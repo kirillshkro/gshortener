@@ -41,12 +41,12 @@ func (s *HandlerLogTestSuite) TestHandlerWithLog() {
 	s.Assert().Equal(http.StatusTemporaryRedirect, resp.StatusCode)
 	s.Assert().NotZero(elapsed)
 
-	reqOriginalURL := types.RequestData{
+	reqData := types.RequestData{
 		URL: types.RawURL(urlgen.GenerateURL("https://base.com")),
 	}
 
 	body := bytes.NewBuffer(nil)
-	if err := json.NewEncoder(body).Encode(reqOriginalURL); err != nil {
+	if err := json.NewEncoder(body).Encode(reqData); err != nil {
 		s.T().Fatal(err)
 	}
 	req = httptest.NewRequest(http.MethodPost, "/api/shorten", body)
