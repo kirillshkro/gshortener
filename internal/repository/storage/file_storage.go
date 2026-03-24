@@ -3,21 +3,22 @@ package storage
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
 type FileStorage struct {
-	file   *os.File
-	m      sync.Mutex
-	nextID int64
-	index  map[types.RawURL]bool
-	stor   map[types.RawURL]types.ShortURL
+	file *os.File
+	mu   sync.Mutex
+	//используется для того, чтобы не искать по всему файлу имеющееся значение
+	index map[types.RawURL]bool
+	//Хранит пары ключ-значение в памяти
+	stor map[types.RawURL]types.ShortURL
 }
 
 var (
@@ -30,7 +31,6 @@ func GetFileStorage(fPath string) (*FileStorage, error) {
 	once.Do(func() {
 		instance, err = newFileStorage(fPath)
 		err = instance.load()
-		instance.nextID, err = instance.GetCounter()
 	})
 	return instance, err
 }
@@ -42,10 +42,9 @@ func newFileStorage(fPath string) (*FileStorage, error) {
 	}
 
 	return &FileStorage{
-		file:   file,
-		index:  make(map[types.RawURL]bool),
-		nextID: 1,
-		stor:   make(map[types.RawURL]types.ShortURL),
+		file:  file,
+		index: make(map[types.RawURL]bool),
+		stor:  make(map[types.RawURL]types.ShortURL),
 	}, nil
 }
 
@@ -56,11 +55,11 @@ func (f *FileStorage) Close() error {
 /*
 Возвращает значение по ключу из файла
 */
-func (f *FileStorage) Data(key types.ShortURL) (types.RawURL, error) {
+func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 	var (
-		fData types.FileData
-		err   error
-		items []types.FileData
+		fOriginalURL types.FileData
+		err          error
+		items        []types.FileData
 	)
 
 	if info, err := f.file.Stat(); err != nil || info.Size() == 0 {
@@ -73,9 +72,9 @@ func (f *FileStorage) Data(key types.ShortURL) (types.RawURL, error) {
 		return "", err
 	}
 
-	for _, fData = range items {
-		if key == fData.ShortURL {
-			return fData.OriginalURL, nil
+	for _, fOriginalURL = range items {
+		if key == fOriginalURL.ShortURL {
+			return fOriginalURL.OriginalURL, nil
 		}
 	}
 	return "", err
@@ -84,25 +83,33 @@ func (f *FileStorage) Data(key types.ShortURL) (types.RawURL, error) {
 /*
 Добавляет в файл пару ключ-значение
 */
-func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
+func (f *FileStorage) Create(req types.DataURL) (err error) {
 	var (
 		buf []byte
-		err error
 	)
-	f.m.Lock()
-	defer f.m.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	key := req.ShortURL
+	val := req.OriginalURL
 
 	if key == "" || val == "" {
-		return errors.New("empty params")
+		return types.ErrEmptyParams
 	}
 
-	if f.keyExist(key) {
-		return nil
+	if f.keyExist(val) {
+		return &types.ErrUnique{
+			CauseURL: val,
+			ShortURL: key,
+			Err:      fmt.Errorf("error duplicate value %s", val),
+		}
 	}
 	item := types.FileData{
-		UUID:        f.nextID,
-		ShortURL:    val,
-		OriginalURL: key,
+		UUID: uuid.NewString(),
+		DataURL: types.DataURL{
+			ShortURL:    key,
+			OriginalURL: val,
+		},
 	}
 
 	if buf, err = json.Marshal(item); err != nil {
@@ -113,8 +120,7 @@ func (f *FileStorage) SetData(key types.RawURL, val types.ShortURL) error {
 		return err
 	}
 
-	f.nextID += 1
-	f.index[key] = true
+	f.index[val] = true
 	err = f.file.Sync()
 	return err
 }
@@ -153,7 +159,12 @@ func (f *FileStorage) AddRecord(r io.Reader) (err error) {
 	if err = json.NewDecoder(r).Decode(&item); err != nil {
 		return err
 	}
-	return f.SetData(item.OriginalURL, item.ShortURL)
+
+	rec := types.DataURL{
+		ShortURL:    item.ShortURL,
+		OriginalURL: item.OriginalURL,
+	}
+	return f.Create(rec)
 }
 
 func (f *FileStorage) keyExist(key types.RawURL) bool {
@@ -249,13 +260,25 @@ func (f *FileStorage) appendItem(item []byte) error {
 
 func (f *FileStorage) load() (err error) {
 	if f.file == nil {
-		return errors.New("file not opened")
+		return types.ErrFileOpen
 	}
 
 	var (
 		item    types.FileData
 		content []types.FileData
+		fInfo   os.FileInfo
 	)
+
+	fInfo, err = f.file.Stat()
+	if err != nil {
+		return
+	}
+	//Если файл только что создан и загружать еще нечего,
+	//то ошибки нет
+	if fInfo.Size() == 0 {
+		return nil
+	}
+
 	if err = json.NewDecoder(f.file).Decode(&content); err != nil {
 		return
 	}
@@ -265,4 +288,11 @@ func (f *FileStorage) load() (err error) {
 		f.stor[item.OriginalURL] = item.ShortURL
 	}
 	return
+}
+
+func (f *FileStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
+	if val, ok := f.stor[key]; ok {
+		return val, nil
+	}
+	return "", types.ErrNotFound
 }

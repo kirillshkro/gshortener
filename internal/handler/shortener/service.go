@@ -1,11 +1,15 @@
 package shortener
 
 import (
+	"bufio"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/kirillshkro/gshortener/internal/config"
@@ -16,13 +20,26 @@ import (
 type Service struct {
 	ServAddr   types.RawURL
 	ResultAddr types.ShortURL
-	Stor       *storage.Storage
-	FStor      *storage.FileStorage
+	Stor       storage.IStorage
+	logger     *slog.Logger
 }
 
 type IService interface {
+	URLEncoder
+	URLDecoder
+	BatchCreator
+}
+
+type URLEncoder interface {
 	URLEncode(resp http.ResponseWriter, req *http.Request)
+}
+
+type URLDecoder interface {
 	URLDecode(resp http.ResponseWriter, req *http.Request)
+}
+
+type BatchCreator interface {
+	BatchCreateShortURL(resp http.ResponseWriter, req *http.Request)
 }
 
 // Создает сервис со значениями по умолчанию
@@ -35,8 +52,8 @@ func NewService() *Service {
 	return &Service{
 		ServAddr:   types.RawURL("localhost:8080"),
 		ResultAddr: types.ShortURL("localhost:8080"),
-		Stor:       storage.NewStorage(),
-		FStor:      stor,
+		Stor:       stor,
+		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
 	}
 }
 
@@ -50,8 +67,8 @@ func NewServiceWithAddr(addr types.RawURL) *Service {
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: types.ShortURL("localhost:8080"),
-		Stor:       storage.NewStorage(),
-		FStor:      stor,
+		Stor:       stor,
+		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
 	}
 }
 
@@ -65,8 +82,8 @@ func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.Shor
 	return &Service{
 		ServAddr:   addr,
 		ResultAddr: shortAddr,
-		Stor:       storage.NewStorage(),
-		FStor:      stor,
+		Stor:       stor,
+		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
 	}
 }
 
@@ -76,27 +93,43 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	baseURL := string(s.ResultAddr)
+	baseURL := s.ResultAddr
 	bodyReq, err := io.ReadAll(req.Body)
 	if err != nil {
-		log.Println("cannot read request: ", err.Error())
-	}
-	resp.Header().Set("Content-Type", "text/plain")
-	resp.WriteHeader(http.StatusCreated)
-	content := Hashing(bodyReq)
-	outData := baseURL + "/" + content
-	s.Stor.SetData(types.ShortURL(content), types.RawURL(bodyReq))
-	if err := s.FStor.SetData(types.RawURL(bodyReq), types.ShortURL(content)); err != nil {
-		http.Error(resp, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
+		s.logger.Error("cannot read request: " + err.Error())
+		http.Error(resp, "bad request", http.StatusBadRequest)
 		return
 	}
-	if _, err = resp.Write([]byte(outData)); err != nil {
-		log.Printf("don't send response because by %s\n", err.Error())
+	resp.Header().Set("Content-Type", "text/plain")
+	content := Hashing(bodyReq)
+	outOriginalURL := baseURL + "/" + content
+	if err = s.Stor.Create(types.DataURL{
+		ShortURL:    types.ShortURL(content),
+		OriginalURL: types.RawURL(bodyReq),
+	}); err != nil {
+		var eu *types.ErrUnique
+		if errors.As(err, &eu) {
+			// если URL уже существует, то возвращаем короткий URL из базы данных
+			resp.WriteHeader(http.StatusConflict)
+			s.logger.Info("URL already exists")
+			shortedURL := s.ResultAddr + "/" + types.ShortURL(eu.ShortURL)
+			if _, err = resp.Write([]byte(shortedURL)); err != nil {
+				s.logger.Error("cannot write to response: " + err.Error())
+				return
+			}
+			return
+		}
+		s.logger.Error("cannot write to storage: " + err.Error())
+		return
+	}
+	resp.WriteHeader(http.StatusCreated)
+	if _, err = resp.Write([]byte(outOriginalURL)); err != nil {
+		s.logger.Error("don't send response because by " + err.Error())
 	}
 }
 
 // Принимает на вход сокращенный URL,
-// возвращает исходный
+// возвращает полный URL
 func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
@@ -108,14 +141,66 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	location := s.Stor.Data(types.ShortURL(id))
+	location, err := s.Stor.OriginalURL(types.ShortURL(id))
+	if err != nil {
+		http.Error(resp, "not found", http.StatusNotFound)
+		return
+	}
 	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func Hashing(data []byte) string {
+func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		resp.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	var (
+		bodyReq []types.BatchRequest
+		item    types.BatchRequest
+		err     error
+		answer  []types.BatchResponse
+	)
+
+	reader := bufio.NewReader(req.Body)
+
+	dec := json.NewDecoder(reader)
+
+	if err = dec.Decode(&bodyReq); err != nil {
+		s.logger.Error("cannot decode request: " + err.Error())
+		resp.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	for _, item = range bodyReq {
+		hashURL := Hashing([]byte(item.OriginalURL))
+		//сохраняем в хранилище
+		if err = s.Stor.Create(types.DataURL{
+			ShortURL:    hashURL,
+			OriginalURL: item.OriginalURL,
+		}); err != nil {
+			s.logger.Error("cannot write to storage: " + err.Error())
+		}
+		shortedURL := s.ResultAddr + "/" + hashURL
+		out := types.BatchResponse{
+			CorrelationID: item.CorrelationID,
+			ShortURL:      shortedURL,
+		}
+		answer = append(answer, out)
+	}
+
+	//устанавливаем тип ответа
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteHeader(http.StatusCreated)
+	if err = json.NewEncoder(resp).Encode(answer); err != nil {
+		s.logger.Error("cannot encode response: " + err.Error())
+		return
+	}
+}
+
+func Hashing(data []byte) types.ShortURL {
 	hashed := sha1.Sum(data)
 	shorthed := hashed[:6]
-	content := hex.EncodeToString(shorthed)
+	content := types.ShortURL(hex.EncodeToString(shorthed))
 	return content
 }

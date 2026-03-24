@@ -59,3 +59,11 @@ func DecodeHandler(s shortener.IService) http.Handler {
 func CreateShortURLHandler(s shortener.JSONEncoder) http.Handler {
 	return http.HandlerFunc(s.CreateShortURL)
 }
+
+func PingHandler(s shortener.Pinger) http.Handler {
+	return http.HandlerFunc(s.Ping)
+}
+
+func BatchCreateURLHandler(s shortener.IService) http.Handler {
+	return http.HandlerFunc(s.BatchCreateShortURL)
+}

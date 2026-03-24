@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"os"
 	"strconv"
 	"testing"
 
@@ -8,49 +9,60 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type storageDataSuite struct {
+type storageOriginalURLSuite struct {
 	suite.Suite
 	fs *FileStorage
 }
 
-func (s *storageDataSuite) SetupSuite() {
+func (s *storageOriginalURLSuite) SetupSuite() {
 	f, err := GetFileStorage("test.json")
 	s.Assert().NoError(err)
 	s.fs = f
 }
 
-func (s *storageDataSuite) TearDownSuite() {
+func (s *storageOriginalURLSuite) TearDownSuite() {
 	s.fs.Close()
+	os.Remove("test.json")
 }
 
-func (s *storageDataSuite) Test_StorageData() {
+func (s *storageOriginalURLSuite) Test_StorageOriginalURL() {
 	for i := range 2 {
 		ss := strconv.Itoa(i)
-		_, err := s.fs.Data("testx" + types.ShortURL(ss))
+		_, err := s.fs.OriginalURL("testx" + types.ShortURL(ss))
 		s.Require().NoError(err)
 	}
 }
 
-func (s *storageDataSuite) Test_StorageSetData() {
-	err := s.fs.SetData("test0", "testx0")
+func (s *storageOriginalURLSuite) Test_StorageCreate() {
+	err := s.fs.Create(types.DataURL{
+		ShortURL:    "test0",
+		OriginalURL: "testx0",
+	})
 	s.Require().NoError(err)
-	err = s.fs.SetData("test0", "testx0")
+	err = s.fs.Create(types.DataURL{
+		ShortURL:    "test1",
+		OriginalURL: "testx1",
+	})
 	s.Require().NoError(err)
-	err = s.fs.SetData("test1", "testx1")
+	err = s.fs.Create(types.DataURL{
+		ShortURL:    "test2",
+		OriginalURL: "testx2",
+	})
 	s.Require().NoError(err)
-	err = s.fs.SetData("test2", "testx2")
-	s.Require().NoError(err)
-	err = s.fs.SetData("test3", "testx3")
+	err = s.fs.Create(types.DataURL{
+		ShortURL:    "test3",
+		OriginalURL: "testx3",
+	})
 	s.Require().NoError(err)
 }
 
-func (s *storageDataSuite) Test_StorageGetCounter() {
+func (s *storageOriginalURLSuite) Test_StorageGetCounter() {
 	counter, err := s.fs.GetCounter()
 	s.Require().NoError(err)
 	s.Assert().Greater(counter, int64(0))
 }
 
-func (s *storageDataSuite) Test_GetFileStorage() {
+func (s *storageOriginalURLSuite) Test_GetFileStorage() {
 	stor, err := GetFileStorage("test.json")
 	s.Require().NoError(err)
 	s.Assert().NotNil(stor)
@@ -61,5 +73,5 @@ func (s *storageDataSuite) Test_GetFileStorage() {
 }
 
 func Test_FileStorageSuite(t *testing.T) {
-	suite.Run(t, new(storageDataSuite))
+	suite.Run(t, new(storageOriginalURLSuite))
 }
