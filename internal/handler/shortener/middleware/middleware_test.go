@@ -29,7 +29,7 @@ func (s *HandlerLogTestSuite) TearDownSuite() {
 func (s *HandlerLogTestSuite) TestHandlerWithLog() {
 	wrapped := HandlerWithLog(DecodeHandler(s.service))
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	w := httptest.NewRecorder()
 
 	start := time.Now()
@@ -39,7 +39,7 @@ func (s *HandlerLogTestSuite) TestHandlerWithLog() {
 	defer resp1.Body.Close()
 
 	s.Assert().Equal(http.StatusTemporaryRedirect, resp1.StatusCode)
-	s.Assert().NotZero(elapsed)
+	s.Assert().Positive(elapsed)
 
 	reqData := types.RequestData{
 		URL: types.RawURL(urlgen.GenerateURL("https://base.com")),
@@ -57,12 +57,11 @@ func (s *HandlerLogTestSuite) TestHandlerWithLog() {
 	wrapped = HandlerWithLog(EncodeHandler(s.service))
 	wrapped.ServeHTTP(w2, req)
 	elapsed = time.Since(start)
-	resp2 := w2.Result()
-	defer resp2.Body.Close()
+
 	s.Assert().Condition(func() bool {
-		return resp2.StatusCode == http.StatusCreated || resp2.StatusCode == http.StatusConflict
-	}, "expected status code 201 or 409, got %d", resp2.StatusCode)
-	s.Assert().Greater(elapsed, time.Millisecond*0)
+		return w2.Code == http.StatusCreated || w2.Code == http.StatusConflict
+	}, "expected status code 201 or 409, got %d", w2.Code)
+	s.Assert().Greater(elapsed, time.Microsecond*0)
 }
 
 func TestMain(t *testing.T) {
