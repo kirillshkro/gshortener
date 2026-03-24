@@ -10,46 +10,60 @@ import (
 
 	"github.com/kirillshkro/gshortener/internal/handler/shortener"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/kirillshkro/gshortener/pkg/urlgen"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestHandlerWithLog(t *testing.T) {
-	service := shortener.NewService()
+type HandlerLogTestSuite struct {
+	suite.Suite
+	service *shortener.Service
+}
 
-	wrapped := HandlerWithLog(DecodeHandler(service))
+func (s *HandlerLogTestSuite) SetupSuite() {
+	s.service = shortener.NewService()
+}
 
-	req := httptest.NewRequest("GET", "/test", nil)
+func (s *HandlerLogTestSuite) TearDownSuite() {
+}
+
+func (s *HandlerLogTestSuite) TestHandlerWithLog() {
+	wrapped := HandlerWithLog(DecodeHandler(s.service))
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	w := httptest.NewRecorder()
 
 	start := time.Now()
 	wrapped.ServeHTTP(w, req)
 	elapsed := time.Since(start)
-	resp := w.Result()
-	defer resp.Body.Close()
+	resp1 := w.Result()
+	defer resp1.Body.Close()
 
-	assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
-	assert.NotZero(t, elapsed)
+	s.Assert().Equal(http.StatusTemporaryRedirect, resp1.StatusCode)
+	s.Assert().Positive(elapsed)
 
 	reqData := types.RequestData{
-		URL: "https://weather.google.com",
+		URL: types.RawURL(urlgen.GenerateURL("https://base.com")),
 	}
 
 	body := bytes.NewBuffer(nil)
 	if err := json.NewEncoder(body).Encode(reqData); err != nil {
-		t.Fatal(err)
+		s.T().Fatal(err)
 	}
 	req = httptest.NewRequest(http.MethodPost, "/api/shorten", body)
-	w = httptest.NewRecorder()
+	w2 := httptest.NewRecorder()
 
 	start = time.Now()
 
-	wrapped = HandlerWithLog(EncodeHandler(service))
-	wrapped.ServeHTTP(w, req)
+	wrapped = HandlerWithLog(EncodeHandler(s.service))
+	wrapped.ServeHTTP(w2, req)
 	elapsed = time.Since(start)
-	resp = w.Result()
-	defer resp.Body.Close()
 
-	if assert.Equal(t, http.StatusCreated, resp.StatusCode) {
-		assert.Greater(t, elapsed, time.Millisecond*0)
-	}
+	s.Assert().Condition(func() bool {
+		return w2.Code == http.StatusCreated || w2.Code == http.StatusConflict
+	}, "expected status code 201 or 409, got %d", w2.Code)
+	s.Assert().Greater(elapsed, time.Microsecond*0)
+}
+
+func TestMain(t *testing.T) {
+	suite.Run(t, new(HandlerLogTestSuite))
 }

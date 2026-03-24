@@ -5,20 +5,31 @@ package types
 type RawURL string
 type ShortURL string
 
-type URLData struct {
-	ShortURL    ShortURL `json:"short_url"`
-	OriginalURL RawURL   `json:"original_url"`
+type DataURL struct {
+	ID          uint     `gorm:"not null;primaryKey"`
+	ShortURL    ShortURL `json:"short_url" gorm:"not null;uniqueIndex"`
+	OriginalURL RawURL   `json:"original_url" gorm:"not null;uniqueIndex"`
 }
 
 type FileData struct {
 	UUID string `json:"uuid"`
-	URLData
+	DataURL
 }
 
 type RequestData struct {
-	URL string `json:"url"`
+	URL RawURL `json:"url"`
 }
 
 type ResponseData struct {
-	Result string `json:"result"`
+	Result ShortURL `json:"result"`
+}
+
+type BatchRequest struct {
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   RawURL `json:"original_url"`
+}
+
+type BatchResponse struct {
+	CorrelationID string   `json:"correlation_id"`
+	ShortURL      ShortURL `json:"short_url"`
 }

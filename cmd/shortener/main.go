@@ -44,7 +44,7 @@ func setupService(cfg *config.Config) *shortener.Service {
 	)
 	service := shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(cfg.Address), types.ShortURL(cfg.ShortedURL))
 	if cfg.DSN == "" && cfg.FileDB == "" {
-		service.Stor = storage.NewStorage()
+		service.Stor = storage.NewMemoryStorage()
 		logger.Info("All external storages are unavailable. Using in-memory storage (will not be saved after restart)")
 	}
 	if (cfg.FileDB != "") && (cfg.DSN == "") {
@@ -75,6 +75,8 @@ func setupRouter(service *shortener.Service) *mux.Router {
 	router.Handle("/", middleware.EncodeHandler(service)).Methods(http.MethodPost)
 	router.Handle("/ping", middleware.PingHandler(service)).Methods(http.MethodGet)
 	router.Handle("/{id}", middleware.DecodeHandler(service)).Methods(http.MethodGet)
+	//Добавляем хандлеры с созданием коротких ссылок
+	router.Handle("/api/shorten/batch", middleware.BatchCreateURLHandler(service)).Methods(http.MethodPost)
 	router.Handle("/api/shorten", middleware.CreateShortURLHandler(service)).Methods(http.MethodPost)
 	//Добавляем хандлеры с логгированием
 	router.Use(middleware.HandlerWithLog)
