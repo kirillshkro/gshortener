@@ -40,31 +40,45 @@ func (m *MockIStorage) EXPECT() *MockIStorageMockRecorder {
 	return m.recorder
 }
 
-// Data mocks base method.
-func (m *MockIStorage) Data(key types.ShortURL) (types.RawURL, error) {
+// Close mocks base method.
+func (m *MockIStorage) Close() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Data", key)
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockIStorageMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockIStorage)(nil).Close))
+}
+
+// Create mocks base method.
+func (m *MockIStorage) Create(urlOriginalURL types.DataURL) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Create", urlOriginalURL)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Create indicates an expected call of Create.
+func (mr *MockIStorageMockRecorder) Create(urlOriginalURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockIStorage)(nil).Create), urlOriginalURL)
+}
+
+// OriginalURL mocks base method.
+func (m *MockIStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OriginalURL", key)
 	ret0, _ := ret[0].(types.RawURL)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Data indicates an expected call of Data.
-func (mr *MockIStorageMockRecorder) Data(key any) *gomock.Call {
+// OriginalURL indicates an expected call of OriginalURL.
+func (mr *MockIStorageMockRecorder) OriginalURL(key any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Data", reflect.TypeOf((*MockIStorage)(nil).Data), key)
-}
-
-// SetData mocks base method.
-func (m *MockIStorage) SetData(urlData types.URLData) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetData", urlData)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetData indicates an expected call of SetData.
-func (mr *MockIStorageMockRecorder) SetData(urlData any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetData", reflect.TypeOf((*MockIStorage)(nil).SetData), urlData)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OriginalURL", reflect.TypeOf((*MockIStorage)(nil).OriginalURL), key)
 }

@@ -5,8 +5,8 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -96,25 +96,40 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	baseURL := s.ResultAddr
 	bodyReq, err := io.ReadAll(req.Body)
 	if err != nil {
-		log.Println("cannot read request: ", err.Error())
+		s.logger.Error("cannot read request: " + err.Error())
+		http.Error(resp, "bad request", http.StatusBadRequest)
+		return
 	}
 	resp.Header().Set("Content-Type", "text/plain")
-	resp.WriteHeader(http.StatusCreated)
 	content := Hashing(bodyReq)
-	outData := baseURL + "/" + content
-	if err = s.Stor.SetData(types.URLData{
+	outOriginalURL := baseURL + "/" + content
+	if err = s.Stor.Create(types.DataURL{
 		ShortURL:    types.ShortURL(content),
 		OriginalURL: types.RawURL(bodyReq),
 	}); err != nil {
-		log.Println("cannot write to storage: ", err.Error())
+		var eu *types.ErrUnique
+		if errors.As(err, &eu) {
+			// если URL уже существует, то возвращаем короткий URL из базы данных
+			resp.WriteHeader(http.StatusConflict)
+			s.logger.Info("URL already exists")
+			shortedURL := s.ResultAddr + "/" + types.ShortURL(eu.ShortURL)
+			if _, err = resp.Write([]byte(shortedURL)); err != nil {
+				s.logger.Error("cannot write to response: " + err.Error())
+				return
+			}
+			return
+		}
+		s.logger.Error("cannot write to storage: " + err.Error())
+		return
 	}
-	if _, err = resp.Write([]byte(outData)); err != nil {
-		log.Printf("don't send response because by %s\n", err.Error())
+	resp.WriteHeader(http.StatusCreated)
+	if _, err = resp.Write([]byte(outOriginalURL)); err != nil {
+		s.logger.Error("don't send response because by " + err.Error())
 	}
 }
 
 // Принимает на вход сокращенный URL,
-// возвращает исходный
+// возвращает полный URL
 func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
@@ -126,7 +141,7 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	location, err := s.Stor.Data(types.ShortURL(id))
+	location, err := s.Stor.OriginalURL(types.ShortURL(id))
 	if err != nil {
 		http.Error(resp, "not found", http.StatusNotFound)
 		return
@@ -160,7 +175,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	for _, item = range bodyReq {
 		hashURL := Hashing([]byte(item.OriginalURL))
 		//сохраняем в хранилище
-		if err = s.Stor.SetData(types.URLData{
+		if err = s.Stor.Create(types.DataURL{
 			ShortURL:    hashURL,
 			OriginalURL: item.OriginalURL,
 		}); err != nil {
