@@ -6,9 +6,10 @@ type RawURL string
 type ShortURL string
 
 type DataURL struct {
-	ID          uint     `gorm:"not null;primaryKey"`
-	ShortURL    ShortURL `json:"short_url" gorm:"type:varchar(10);not null;uniqueIndex:idx_short_url"`
-	OriginalURL RawURL   `json:"original_url" gorm:"not null;uniqueIndex:idx_original_url"`
+	ID          uint        `gorm:"not null;primaryKey"`
+	ShortURL    ShortURL    `json:"short_url" gorm:"type:varchar(10);not null;uniqueIndex:idx_short_url"`
+	OriginalURL RawURL      `json:"original_url" gorm:"not null;uniqueIndex:idx_original_url"`
+	UserProfile UserProfile `json:"user_profile" gorm:"foreignKey"`
 }
 
 type FileData struct {
