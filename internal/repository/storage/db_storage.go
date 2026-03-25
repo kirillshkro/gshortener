@@ -134,6 +134,6 @@ func (s *DBStorage) onConflict() *gorm.DB {
 func (s *DBStorage) onIndex() *gorm.DB {
 	return s.db.Clauses(
 		hints.UseIndex("idx_short_url"),
-		hints.UseIndex("original_url_idx"),
+		hints.UseIndex("idx_original_url"),
 	)
 }

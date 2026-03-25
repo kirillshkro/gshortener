@@ -7,8 +7,8 @@ type ShortURL string
 
 type DataURL struct {
 	ID          uint     `gorm:"not null;primaryKey"`
-	ShortURL    ShortURL `json:"short_url" gorm:"not null;uniqueIndex"`
-	OriginalURL RawURL   `json:"original_url" gorm:"not null;uniqueIndex"`
+	ShortURL    ShortURL `json:"short_url" gorm:"type:varchar(10);not null;uniqueIndex:idx_short_url"`
+	OriginalURL RawURL   `json:"original_url" gorm:"not null;uniqueIndex:idx_original_url"`
 }
 
 type FileData struct {
