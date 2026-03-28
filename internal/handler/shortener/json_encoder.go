@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 )
 
 type JSONEncoder interface {
@@ -30,7 +31,7 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	id := Hashing([]byte(data.URL))
 	respData.Result = s.ResultAddr + "/" + id
 	s.logger.Info("URL: " + string(s.ResultAddr))
-	if err := s.Stor.Create(types.DataURL{
+	if err := s.Stor.Create(model.DataURL{
 		ShortURL:    types.ShortURL(id),
 		OriginalURL: types.RawURL(data.URL),
 	}); err != nil {

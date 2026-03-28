@@ -5,6 +5,7 @@ import (
 
 	"github.com/kirillshkro/gshortener/internal/mocks"
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -26,7 +27,7 @@ func (d *DBStorageTestSuite) TearDownSuite() {
 
 func (d *DBStorageTestSuite) TestDBStorage_Create() {
 	// Настройка ожидаемого поведения
-	expectedURLOriginalURL := types.DataURL{
+	expectedURLOriginalURL := model.DataURL{
 		ShortURL:    "abc123",
 		OriginalURL: "https://example.com",
 	}
@@ -39,7 +40,7 @@ func (d *DBStorageTestSuite) TestDBStorage_Create() {
 
 func (d *DBStorageTestSuite) TestDBStorage_Create_EmptyShortURL() {
 
-	urlOriginalURL := types.DataURL{
+	urlOriginalURL := model.DataURL{
 		ShortURL:    "",
 		OriginalURL: "https://example.com",
 	}
@@ -52,7 +53,7 @@ func (d *DBStorageTestSuite) TestDBStorage_Create_EmptyShortURL() {
 
 func (d *DBStorageTestSuite) TestDBStorage_Create_EmptyOriginalURL() {
 
-	urlOriginalURL := types.DataURL{
+	urlOriginalURL := model.DataURL{
 		ShortURL:    "abc123",
 		OriginalURL: "",
 	}
@@ -66,7 +67,7 @@ func (d *DBStorageTestSuite) TestDBStorage_Create_EmptyOriginalURL() {
 
 func (d *DBStorageTestSuite) TestDBStorage_Create_BothEmpty() {
 
-	urlOriginalURL := types.DataURL{
+	urlOriginalURL := model.DataURL{
 		ShortURL:    "",
 		OriginalURL: "",
 	}

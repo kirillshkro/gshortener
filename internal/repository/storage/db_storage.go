@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -30,16 +31,16 @@ func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 		return "", types.ErrEmptyParams
 	}
 	th := s.onIndex()
-	data, err := gorm.G[types.DataURL](th).Select("original_url").Where("short_url = ?", shortURL).First(context.Background())
+	data, err := gorm.G[model.DataURL](th).Select("original_url").Where("short_url = ?", shortURL).First(context.Background())
 	if err != nil {
 		return "", err
 	}
 	return data.OriginalURL, nil
 }
 
-func (s *DBStorage) Create(reqData types.DataURL) error {
+func (s *DBStorage) Create(reqData model.DataURL) error {
 	tx := s.onConflict()
-	if err := gorm.G[types.DataURL](tx).Create(context.Background(), &reqData); err != nil {
+	if err := gorm.G[model.DataURL](tx).Create(context.Background(), &reqData); err != nil {
 		slog.Error("Current error: " + err.Error())
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			shortURL, err := s.shortURL(reqData.OriginalURL)
@@ -101,7 +102,7 @@ func GetDBStorage(conn string) (*DBStorage, error) {
 func (s *DBStorage) populateTables() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := s.db.WithContext(ctx).AutoMigrate(&types.DataURL{}); err != nil {
+	if err := s.db.WithContext(ctx).AutoMigrate(&model.DataURL{}); err != nil {
 		return err
 	}
 	return nil
@@ -114,7 +115,7 @@ func (s *DBStorage) Close() error {
 func (s *DBStorage) shortURL(originalURL types.RawURL) (types.ShortURL, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	urlOriginalURL, err := gorm.G[types.DataURL](s.db).Where("original_url = ?", originalURL).First(ctx)
+	urlOriginalURL, err := gorm.G[model.DataURL](s.db).Where("original_url = ?", originalURL).First(ctx)
 	if err != nil {
 		return "", err
 	}

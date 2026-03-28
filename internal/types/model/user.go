@@ -1,4 +1,4 @@
-package types
+package model
 
 // Профиль юзера: ID и список его ссылок, признак авторизации
 type UserProfile struct {

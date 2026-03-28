@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +14,7 @@ type UserRepository interface {
 }
 
 type Creator interface {
-	Create(profile types.UserProfile) (int, error)
+	Create(profile model.UserProfile) (int, error)
 }
 
 type Deleter interface {
@@ -22,7 +22,7 @@ type Deleter interface {
 }
 
 type Reader interface {
-	ReadAll(userId int) ([]types.DataURL, error)
+	ReadAll(userId int) ([]model.DataURL, error)
 }
 
 type userRepository struct {
@@ -35,10 +35,10 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	}
 }
 
-func (r *userRepository) Create(profile types.UserProfile) (int, error) {
+func (r *userRepository) Create(profile model.UserProfile) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := gorm.G[types.UserProfile](r.db).Create(ctx, &profile); err != nil {
+	if err := gorm.G[model.UserProfile](r.db).Create(ctx, &profile); err != nil {
 		return 0, err
 	}
 	return profile.Id, nil
@@ -47,7 +47,7 @@ func (r *userRepository) Create(profile types.UserProfile) (int, error) {
 func (r *userRepository) Delete(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if _, err := gorm.G[types.UserProfile](r.db).Where("id = ?", id).Delete(ctx); err != nil {
+	if _, err := gorm.G[model.UserProfile](r.db).Where("id = ?", id).Delete(ctx); err != nil {
 		return err
 	}
 	return nil
