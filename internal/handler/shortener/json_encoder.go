@@ -20,7 +20,7 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 		respData types.ResponseData
 	)
 	if req.Method != http.MethodPost {
-		resp.WriteHeader(http.StatusBadRequest)
+		resp.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 	if err := json.NewDecoder(req.Body).Decode(&data); err != nil {

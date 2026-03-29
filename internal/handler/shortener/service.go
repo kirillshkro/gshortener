@@ -91,7 +91,7 @@ func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.Shor
 // Принимает на вход URL, возвращает базовый URL сервиса + хэш исходного URL
 func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
-		resp.WriteHeader(http.StatusBadRequest)
+		resp.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 	baseURL := s.ResultAddr
@@ -133,7 +133,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 // возвращает полный URL
 func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
-		resp.WriteHeader(http.StatusBadRequest)
+		resp.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 	path := req.URL.Path
@@ -153,7 +153,7 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 
 func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
-		resp.WriteHeader(http.StatusBadRequest)
+		resp.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 

@@ -59,21 +59,21 @@ func (s *ServiceTestsSuite) Test_URLEncode() {
 			method: http.MethodGet,
 			uri:    testOriginalURL,
 			hash:   Hashing([]byte(testOriginalURL)),
-			code:   http.StatusBadRequest,
+			code:   http.StatusMethodNotAllowed,
 		},
 		{
 			name:   "PUT request",
 			method: http.MethodPut,
 			uri:    testOriginalURL,
 			hash:   Hashing([]byte(testOriginalURL)),
-			code:   http.StatusBadRequest,
+			code:   http.StatusMethodNotAllowed,
 		},
 		{
 			name:   "PATCH request",
 			method: http.MethodPatch,
 			uri:    testOriginalURL,
 			hash:   Hashing([]byte(testOriginalURL)),
-			code:   http.StatusBadRequest,
+			code:   http.StatusMethodNotAllowed,
 		},
 	}
 	for _, test := range tests {
@@ -124,19 +124,19 @@ func (s *ServiceTestsSuite) Test_URLDecode() {
 			name:   "Bad POST request",
 			method: http.MethodPost,
 			uri:    testURL,
-			status: http.StatusBadRequest,
+			status: http.StatusMethodNotAllowed,
 		},
 		{
 			name:   "Bad PUT request",
 			method: http.MethodPut,
 			uri:    testURL,
-			status: http.StatusBadRequest,
+			status: http.StatusMethodNotAllowed,
 		},
 		{
 			name:   "Bad PATCH request",
 			method: http.MethodPatch,
 			uri:    testURL,
-			status: http.StatusBadRequest,
+			status: http.StatusMethodNotAllowed,
 		},
 	}
 
@@ -200,7 +200,7 @@ func (s *ServiceTestsSuite) Test_CreateShortURL() {
 			name:   "Wrong GET request",
 			method: http.MethodGet,
 			body:   []byte(""),
-			status: http.StatusBadRequest,
+			status: http.StatusMethodNotAllowed,
 		},
 	}
 	for _, test := range tests {
