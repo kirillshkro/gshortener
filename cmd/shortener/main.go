@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kirillshkro/gshortener/internal/config"
@@ -13,6 +15,10 @@ import (
 	"github.com/kirillshkro/gshortener/internal/handler/shortener/middleware"
 	"github.com/kirillshkro/gshortener/internal/repository/storage"
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var cfg *config.Config
@@ -59,10 +65,12 @@ func setupService(cfg *config.Config) *shortener.Service {
 	}
 	if cfg.DSN != "" {
 		logger.Info("Try connect to database", "dsn", cfg.DSN)
-		if stor, err = storage.GetDBStorage(cfg.DSN); err != nil {
+		db, err := newDB(cfg.DSN)
+		if err != nil {
 			logger.Warn("Failed to connect to database, switching to the next option", "error", err)
 		} else {
 			logger.Info("Using database storage")
+			stor = storage.NewURLRepository(db)
 			service.Stor = stor
 		}
 	}
@@ -83,4 +91,40 @@ func setupRouter(service *shortener.Service) *mux.Router {
 	//Добавляем хандлеры с сжатием траффика
 	router.Use(middleware.HandlerWithGzip)
 	return router
+}
+
+func newDB(dsn string) (*gorm.DB, error) {
+	dbLogger := logger.NewSlogLogger(
+		slog.New(
+			slog.NewJSONHandler(os.Stderr, nil),
+		),
+		logger.Config{
+			LogLevel:             logger.Info,
+			SlowThreshold:        500 * time.Millisecond,
+			ParameterizedQueries: true,
+			Colorful:             true,
+		},
+	)
+	conf := &gorm.Config{
+		Logger:         dbLogger,
+		PrepareStmt:    true,
+		TranslateError: true,
+	}
+	db, err := gorm.Open(postgres.Open(dsn), conf)
+	if err != nil {
+		return nil, err
+	}
+	if err = populateTables(db); err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
+func populateTables(db *gorm.DB) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := db.WithContext(ctx).AutoMigrate(&model.DataURL{}); err != nil {
+		return err
+	}
+	return nil
 }
