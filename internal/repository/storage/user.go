@@ -41,7 +41,7 @@ func (r *userRepository) Create(profile model.UserProfile) (int, error) {
 	if err := gorm.G[model.UserProfile](r.db).Create(ctx, &profile); err != nil {
 		return 0, err
 	}
-	return profile.Id, nil
+	return profile.ID, nil
 }
 
 func (r *userRepository) Delete(id int) error {
