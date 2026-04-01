@@ -9,5 +9,5 @@ type UserProfile struct {
 	Id         int       `json:"uuid" gorm:"primaryKey"`
 	Authorized bool      `json:"authorized" gorm:"not null"`
 	CreatedAt  time.Time `json:"created_at" gorm:"not null"`
-	URLs       []DataURL `json:"urls" gorm:"foreignKey:UserProfileID;references:Id"`
+	URLs       []DataURL `json:"urls" gorm:"foreignKey:UserProfileID;constraint:OnDelete:CASCADE"`
 }
