@@ -22,7 +22,7 @@ type Deleter interface {
 }
 
 type Reader interface {
-	ReadAll(userId int) ([]model.DataURL, error)
+	ReadAll(userID int) ([]model.DataURL, error)
 }
 
 type userRepository struct {
