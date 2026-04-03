@@ -5,9 +5,10 @@ import (
 )
 
 var (
-	ErrEmptyParams = errors.New("empty params")
-	ErrFileOpen    = errors.New("file not opened")
-	ErrNotFound    = errors.New("key not found")
+	ErrEmptyParams   = errors.New("empty params")
+	ErrFileOpen      = errors.New("file not opened")
+	ErrNotFound      = errors.New("key not found")
+	ErrInvalidParams = errors.New("invalid params: lenght less than standard UUIDv4")
 )
 
 type ErrUnique struct {
