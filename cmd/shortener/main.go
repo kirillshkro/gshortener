@@ -123,7 +123,7 @@ func newDB(dsn string) (*gorm.DB, error) {
 func populateTables(db *gorm.DB) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := db.WithContext(ctx).AutoMigrate(&model.DataURL{}); err != nil {
+	if err := db.WithContext(ctx).AutoMigrate(&model.DataURL{}, &model.UserProfile{}); err != nil {
 		return err
 	}
 	return nil
