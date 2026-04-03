@@ -66,7 +66,7 @@ func (r *URLRepository) URLsByUserID(userUUID string) ([]resultURL, error) {
 		return []resultURL{}, types.ErrInvalidParams
 	}
 
-	urls, err := gorm.G[model.DataURL](r.db).Select("short_url", "original_url").Where("user_id =?", userUUID).Find(context.Background())
+	urls, err := gorm.G[model.DataURL](r.db).Select("short_url", "original_url").Where("user_profile_id =?", userUUID).Find(context.Background())
 	if err != nil {
 		return nil, err
 	}
