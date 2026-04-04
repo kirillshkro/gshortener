@@ -14,8 +14,11 @@ import (
 
 type URLRepository struct {
 	db *gorm.DB
+}
 
-	userRepository UserRepository
+type resultURL struct {
+	ShortURL    types.ShortURL `json:"short_url"`
+	OriginalURL types.RawURL   `json:"original_url"`
 }
 
 func (s *URLRepository) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
@@ -48,13 +51,34 @@ func (s *URLRepository) Create(reqData model.DataURL) error {
 
 func NewURLRepository(db *gorm.DB) *URLRepository {
 	return &URLRepository{
-		db:             db,
-		userRepository: NewUserRepository(db),
+		db: db,
 	}
 }
 
 func (s *URLRepository) Close() error {
 	return nil
+}
+
+func (r *URLRepository) URLsByUserID(userUUID string) ([]resultURL, error) {
+	const lenUUID = 36
+	var result []resultURL
+	if len(userUUID) != lenUUID {
+		return []resultURL{}, types.ErrInvalidParams
+	}
+
+	urls, err := gorm.G[model.DataURL](r.db).Select("short_url", "original_url").Where("user_profile_id =?", userUUID).Find(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	for _, url := range urls {
+		result = append(result, resultURL{
+			ShortURL:    url.ShortURL,
+			OriginalURL: url.OriginalURL,
+		})
+	}
+
+	return result, nil
 }
 
 func (s *URLRepository) shortURL(originalURL types.RawURL) (types.ShortURL, error) {
