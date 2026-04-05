@@ -5,17 +5,6 @@ package types
 type RawURL string
 type ShortURL string
 
-type DataURL struct {
-	ID          uint     `gorm:"not null;primaryKey"`
-	ShortURL    ShortURL `json:"short_url" gorm:"not null;uniqueIndex"`
-	OriginalURL RawURL   `json:"original_url" gorm:"not null;uniqueIndex"`
-}
-
-type FileData struct {
-	UUID string `json:"uuid"`
-	DataURL
-}
-
 type RequestData struct {
 	URL RawURL `json:"url"`
 }

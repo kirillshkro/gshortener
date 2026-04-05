@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 )
 
 type FileStorage struct {
@@ -57,9 +58,9 @@ func (f *FileStorage) Close() error {
 */
 func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 	var (
-		fOriginalURL types.FileData
+		fOriginalURL model.FileData
 		err          error
-		items        []types.FileData
+		items        []model.FileData
 	)
 
 	if info, err := f.file.Stat(); err != nil || info.Size() == 0 {
@@ -83,7 +84,7 @@ func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 /*
 Добавляет в файл пару ключ-значение
 */
-func (f *FileStorage) Create(req types.DataURL) (err error) {
+func (f *FileStorage) Create(req model.URLData) (err error) {
 	var (
 		buf []byte
 	)
@@ -104,9 +105,9 @@ func (f *FileStorage) Create(req types.DataURL) (err error) {
 			Err:      fmt.Errorf("error duplicate value %s", val),
 		}
 	}
-	item := types.FileData{
+	item := model.FileData{
 		UUID: uuid.NewString(),
-		DataURL: types.DataURL{
+		URLData: model.URLData{
 			ShortURL:    key,
 			OriginalURL: val,
 		},
@@ -155,12 +156,12 @@ func (f *FileStorage) GetCounter() (counter int64, err error) {
 }
 
 func (f *FileStorage) AddRecord(r io.Reader) (err error) {
-	item := types.FileData{}
+	item := model.FileData{}
 	if err = json.NewDecoder(r).Decode(&item); err != nil {
 		return err
 	}
 
-	rec := types.DataURL{
+	rec := model.URLData{
 		ShortURL:    item.ShortURL,
 		OriginalURL: item.OriginalURL,
 	}
@@ -264,8 +265,8 @@ func (f *FileStorage) load() (err error) {
 	}
 
 	var (
-		item    types.FileData
-		content []types.FileData
+		item    model.FileData
+		content []model.FileData
 		fInfo   os.FileInfo
 	)
 

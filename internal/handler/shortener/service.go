@@ -15,6 +15,7 @@ import (
 	"github.com/kirillshkro/gshortener/internal/config"
 	"github.com/kirillshkro/gshortener/internal/repository/storage"
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 )
 
 type Service struct {
@@ -103,7 +104,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-Type", "text/plain")
 	content := Hashing(bodyReq)
 	outOriginalURL := baseURL + "/" + content
-	if err = s.Stor.Create(types.DataURL{
+	if err = s.Stor.Create(model.URLData{
 		ShortURL:    types.ShortURL(content),
 		OriginalURL: types.RawURL(bodyReq),
 	}); err != nil {
@@ -175,7 +176,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	for _, item = range bodyReq {
 		hashURL := Hashing([]byte(item.OriginalURL))
 		//сохраняем в хранилище
-		if err = s.Stor.Create(types.DataURL{
+		if err = s.Stor.Create(model.URLData{
 			ShortURL:    hashURL,
 			OriginalURL: item.OriginalURL,
 		}); err != nil {

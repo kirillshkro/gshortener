@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 
 	types "github.com/kirillshkro/gshortener/internal/types"
+	model "github.com/kirillshkro/gshortener/internal/types/model"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -55,7 +56,7 @@ func (mr *MockIStorageMockRecorder) Close() *gomock.Call {
 }
 
 // Create mocks base method.
-func (m *MockIStorage) Create(urlOriginalURL types.DataURL) error {
+func (m *MockIStorage) Create(urlOriginalURL model.URLData) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", urlOriginalURL)
 	ret0, _ := ret[0].(error)
