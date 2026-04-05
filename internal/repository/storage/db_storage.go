@@ -59,14 +59,14 @@ func (s *URLRepository) Close() error {
 	return nil
 }
 
-func (r *URLRepository) URLsByUserID(userUUID string) ([]resultURL, error) {
+func (s *URLRepository) URLsByUserID(userUUID string) ([]resultURL, error) {
 	const lenUUID = 36
 	var result []resultURL
 	if len(userUUID) != lenUUID {
 		return []resultURL{}, types.ErrInvalidParams
 	}
 
-	urls, err := gorm.G[model.DataURL](r.db).Select("short_url", "original_url").Where("user_profile_id =?", userUUID).Find(context.Background())
+	urls, err := gorm.G[model.DataURL](s.db).Select("short_url", "original_url").Where("user_profile_id =?", userUUID).Find(context.Background())
 	if err != nil {
 		return nil, err
 	}
