@@ -122,6 +122,25 @@ func (s *DBStorage) shortURL(originalURL types.RawURL) (types.ShortURL, error) {
 	return urlOriginalURL.ShortURL, nil
 }
 
+func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
+	const uuidLen = 36
+	if len(userUUID) != uuidLen {
+		return nil, types.ErrInvalidArgument
+	}
+	urls, err := gorm.G[model.URLData](s.db).Select("short_url", "original_url").Where("user_uuid = ?", userUUID).Find(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	var result []types.UserURL
+	for _, url := range urls {
+		result = append(result, types.UserURL{
+			ShortURL:    url.ShortURL,
+			OriginalURL: url.OriginalURL,
+		})
+	}
+	return result, nil
+}
+
 func (s *DBStorage) onConflict() *gorm.DB {
 	return s.db.Clauses(
 		clause.OnConflict{

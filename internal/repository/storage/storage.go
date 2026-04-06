@@ -18,6 +18,11 @@ type IStorage interface {
 	OriginalURL(key types.ShortURL) (types.RawURL, error)
 	Create(urlOriginalURL model.URLData) error
 	Close() error
+	UserGetter
+}
+
+type UserGetter interface {
+	GetUserURLs(userUUID string) ([]types.UserURL, error)
 }
 
 func NewMemoryStorage() *MemoryStorage {
@@ -60,4 +65,8 @@ func (s *MemoryStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
 		}
 	}
 	return "", types.ErrNotFound
+}
+
+func (s *MemoryStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
+	return []types.UserURL{}, nil
 }

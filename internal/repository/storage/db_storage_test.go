@@ -3,6 +3,7 @@ package storage
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/kirillshkro/gshortener/internal/mocks"
 	"github.com/kirillshkro/gshortener/internal/types"
 	"github.com/kirillshkro/gshortener/internal/types/model"
@@ -89,6 +90,20 @@ func (d *DBStorageTestSuite) TestDBStorage_OriginalURL() {
 
 	d.Assert().NoError(err)
 	d.Assert().Equal(expectedOriginalURL, originalURL)
+}
+
+func (d *DBStorageTestSuite) TestDBStorage_GetUserURLs() {
+	userID := uuid.NewString()
+	d.mockStorage.EXPECT().GetUserURLs(userID).Return(
+		[]types.UserURL{
+			{
+				ShortURL:    "http://serv/abc123",
+				OriginalURL: "https://example.com/abracadabra",
+			},
+		}, nil)
+	urls, err := d.mockStorage.GetUserURLs(userID)
+	d.Assert().NoError(err)
+	d.Assert().Positive(len(urls))
 }
 
 func Test_Main(t *testing.T) {

@@ -297,3 +297,7 @@ func (f *FileStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
 	}
 	return "", types.ErrNotFound
 }
+
+func (f *FileStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
+	return []types.UserURL{}, nil
+}

@@ -1,0 +1,54 @@
+package shortener
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/kirillshkro/gshortener/internal/types"
+)
+
+type Getter interface {
+	GetUserURLs(resp http.ResponseWriter, req *http.Request)
+}
+
+type userURL struct {
+	ShortURL    types.ShortURL `json:"short_url"`
+	OriginalURL types.RawURL   `json:"original_url"`
+}
+
+func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		resp.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	cookie, err := req.Cookie("auth_cookie")
+	if err != nil {
+		resp.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if cookie.Value == "" {
+		resp.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	//Получаем UserID из cookie
+	userUUID := cookie.Value
+	//Получаем все URL пользователя по его ID
+	urls, err := s.Stor.GetUserURLs(userUUID)
+	if err != nil {
+		resp.WriteHeader(http.StatusNoContent)
+		return
+	}
+	//Отдаем пользователю все URL
+	resp.WriteHeader(http.StatusOK)
+	var userURLs []userURL
+	for _, url := range urls {
+		userURLs = append(userURLs, userURL{
+			ShortURL:    url.ShortURL,
+			OriginalURL: url.OriginalURL,
+		})
+	}
+	if err = json.NewEncoder(resp).Encode(userURLs); err != nil {
+		s.logger.Error("cannot encode response: ", "error: ", err.Error())
+		return
+	}
+}

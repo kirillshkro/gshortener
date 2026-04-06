@@ -29,6 +29,7 @@ type IService interface {
 	URLEncoder
 	URLDecoder
 	BatchCreator
+	Getter
 }
 
 type URLEncoder interface {
