@@ -47,6 +47,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 			OriginalURL: url.OriginalURL,
 		})
 	}
+	resp.Header().Set("Content-Type", "application/json")
 	if err = json.NewEncoder(resp).Encode(userURLs); err != nil {
 		s.logger.Error("cannot encode response: ", "error: ", err.Error())
 		return
