@@ -14,7 +14,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
-	"gorm.io/hints"
 )
 
 type DBStorage struct {
@@ -30,8 +29,7 @@ func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 	if shortURL == "" {
 		return "", types.ErrEmptyParams
 	}
-	th := s.onIndex()
-	data, err := gorm.G[model.URLData](th).Select("original_url").Where("short_url = ?", shortURL).First(context.Background())
+	data, err := gorm.G[model.URLData](s.db).Select("original_url").Where("short_url = ?", shortURL).First(context.Background())
 	if err != nil {
 		return "", err
 	}
@@ -148,12 +146,5 @@ func (s *DBStorage) onConflict() *gorm.DB {
 			DoNothing: true,
 		},
 		clause.Returning{Columns: []clause.Column{{Name: "short_url"}}},
-	)
-}
-
-func (s *DBStorage) onIndex() *gorm.DB {
-	return s.db.Clauses(
-		hints.UseIndex("idx_short_url"),
-		hints.UseIndex("original_url_idx"),
 	)
 }
