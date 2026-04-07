@@ -34,6 +34,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	//Отдаем пользователю все URL
+	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusOK)
 	var userURLs []types.UserURL
 	for _, url := range urls {
@@ -42,7 +43,6 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 			OriginalURL: url.OriginalURL,
 		})
 	}
-	resp.Header().Set("Content-Type", "application/json")
 	if err = json.NewEncoder(resp).Encode(userURLs); err != nil {
 		s.logger.Error("cannot encode response: ", "error: ", err.Error())
 		return
