@@ -11,11 +11,6 @@ type Getter interface {
 	GetUserURLs(resp http.ResponseWriter, req *http.Request)
 }
 
-type userURL struct {
-	ShortURL    types.ShortURL `json:"short_url"`
-	OriginalURL types.RawURL   `json:"original_url"`
-}
-
 func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusMethodNotAllowed)
@@ -40,9 +35,9 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	}
 	//Отдаем пользователю все URL
 	resp.WriteHeader(http.StatusOK)
-	var userURLs []userURL
+	var userURLs []types.UserURL
 	for _, url := range urls {
-		userURLs = append(userURLs, userURL{
+		userURLs = append(userURLs, types.UserURL{
 			ShortURL:    url.ShortURL,
 			OriginalURL: url.OriginalURL,
 		})
