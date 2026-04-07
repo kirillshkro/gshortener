@@ -134,8 +134,8 @@ func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	var result []types.UserURL
 	for _, url := range urls {
 		result = append(result, types.UserURL{
-			ShortURL:    url.ShortURL,
-			OriginalURL: url.OriginalURL,
+			ShortURL:    string(url.ShortURL),
+			OriginalURL: string(url.OriginalURL),
 		})
 	}
 	return result, nil
