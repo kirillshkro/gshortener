@@ -1,4 +1,4 @@
-package auth
+package claims
 
 import (
 	"log/slog"

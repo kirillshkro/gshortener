@@ -21,11 +21,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if cookie.Value == "" {
-		resp.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	//Получаем UserID из cookie
+	//Получаем токен из cookie
 	userUUID := cookie.Value
 	//Получаем все URL пользователя по его ID
 	urls, err := s.Stor.GetUserURLs(userUUID)

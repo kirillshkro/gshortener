@@ -7,8 +7,8 @@ import (
 )
 
 type AuthConfig struct {
-	Secret      string        `env:"SECRET_KEY"`
-	ExpiresTime time.Duration `env:"EXPIRES_TIME"`
+	Secret      string        `env:"SECRET_KEY" env-default:"c2VjcmV0a2V5X1NFQ1JFVF9LRVkK"`
+	ExpiresTime time.Duration `env:"EXPIRES_TIME" env-default:"168h"`
 }
 
 func NewAuthConfig() *AuthConfig {

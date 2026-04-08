@@ -4,7 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/kirillshkro/gshortener/internal/config/auth"
+	"github.com/kirillshkro/gshortener/internal/handler/shortener/claims"
 )
 
 type authWriter struct {
@@ -16,15 +17,20 @@ func (w *authWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
-func newAuthWriter(resp http.ResponseWriter, cookiePath string) *authWriter {
+func newAuthWriter(resp http.ResponseWriter) *authWriter {
+	cfg := auth.NewAuthConfig()
+	authUser := claims.NewAuthUser(cfg)
+	token, _ := authUser.Token()
 	defaultCookie := http.Cookie{
 		Name:     "auth_cookie",
-		Value:    uuid.NewString(),
-		Path:     cookiePath,
-		Expires:  time.Now().Add(7 * 27 * time.Hour),
+		Value:    token,
+		Path:     "/",
+		Expires:  time.Now().Add(7 * 24 * time.Hour), // 7 дней
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
+		Secure:   false,
 	}
+	http.SetCookie(resp, &defaultCookie)
 	return &authWriter{
 		resp,
 		defaultCookie,
@@ -34,9 +40,20 @@ func newAuthWriter(resp http.ResponseWriter, cookiePath string) *authWriter {
 func AuthMiddleware(next http.Handler) http.Handler {
 	fn := func(resp http.ResponseWriter, req *http.Request) {
 		if req.Method == http.MethodPost {
-			writer := newAuthWriter(resp, req.URL.Path)
+			writer := newAuthWriter(resp)
 			next.ServeHTTP(writer, req)
 			return
+		}
+		next.ServeHTTP(resp, req)
+	}
+
+	return http.HandlerFunc(fn)
+}
+
+// выдает куку
+func CookieAuthMiddleware(next http.Handler) http.Handler {
+	fn := func(resp http.ResponseWriter, req *http.Request) {
+		if req.Method == http.MethodPost {
 		}
 		next.ServeHTTP(resp, req)
 	}
