@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kirillshkro/gshortener/internal/handler/shortener/claims"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
@@ -22,9 +23,15 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	//Получаем токен из cookie
-	userUUID := cookie.Value
+	token := cookie.Value
+
+	userID, err := claims.GetUserID(token)
+	if err != nil {
+		resp.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	//Получаем все URL пользователя по его ID
-	urls, err := s.Stor.GetUserURLs(userUUID)
+	urls, err := s.Stor.GetUserURLs(userID)
 	if err != nil {
 		resp.WriteHeader(http.StatusNoContent)
 		return
