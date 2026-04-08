@@ -41,13 +41,13 @@ func (a AuthUser) Token() (string, error) {
 	return token, nil
 }
 
-func (a AuthUser) GetUserID(token string) (string, error) {
+func GetUserID(token string) (string, error) {
 	if token == "" {
 		return "", nil
 	}
 	claims := &AuthUser{}
 	if _, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(a.Cfg.Secret), nil
+		return []byte("c2VjcmV0a2V5X1NFQ1JFVF9LRVkK"), nil
 	}); err != nil {
 		return "", err
 	}
