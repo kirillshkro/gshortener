@@ -37,6 +37,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	//Отдаем пользователю все URL
+	resp.Header().Set("Set-Cookie", cookie.String())
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusOK)
 	var userURLs []types.UserURL
