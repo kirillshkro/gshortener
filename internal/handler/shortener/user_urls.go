@@ -19,7 +19,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	}
 	cookie, err := req.Cookie("auth_cookie")
 	if err != nil {
-		resp.WriteHeader(http.StatusUnauthorized)
+		resp.WriteHeader(http.StatusNoContent)
 		return
 	}
 	//Получаем токен из cookie
@@ -32,7 +32,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 
 	userID, err := claims.GetUserID(token)
 	if err != nil {
-		resp.WriteHeader(http.StatusUnauthorized)
+		resp.WriteHeader(http.StatusNoContent)
 		return
 	}
 	//Получаем все URL пользователя по его ID
