@@ -33,7 +33,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 
 		userID, err := claims.GetUserID(token)
 		if err != nil {
-			resp.WriteHeader(http.StatusNoContent)
+			resp.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		//Получаем все URL пользователя по его ID
