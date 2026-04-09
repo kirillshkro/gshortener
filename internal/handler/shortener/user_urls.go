@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kirillshkro/gshortener/internal/config/auth"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener/claims"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
@@ -20,14 +21,14 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	cookie, err := req.Cookie("auth_cookie")
 	if err != nil {
 		resp.WriteHeader(http.StatusNoContent)
-		return
-	}
-	//Получаем токен из cookie
-	//и проверяем его на валидность
-	token := cookie.Value
-	if token == "" {
-		resp.WriteHeader(http.StatusUnauthorized)
 		//обновим cookie
+		authCfg := auth.NewAuthConfig()
+		authUser := claims.NewAuthUser(authCfg)
+		token, err := authUser.Token()
+		if err != nil {
+			resp.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		updatedCookie := &http.Cookie{
 			Name:     "auth_cookie",
 			Value:    token,
@@ -37,6 +38,13 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 			HttpOnly: true,
 		}
 		http.SetCookie(resp, updatedCookie)
+		return
+	}
+	//Получаем токен из cookie
+	//и проверяем его на валидность
+	token := cookie.Value
+	if token == "" {
+		resp.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
