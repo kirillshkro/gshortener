@@ -34,18 +34,15 @@ func (s *TestURLSuite) TearDownSuite() {
 }
 
 func (s *TestURLSuite) Test_GetUserURLs() {
-	wrapped := AuthMiddleware(EncodeHandler(s.service))
 	testURL := urlgen.GenerateURL("tttp://abracadabra")
 	postReq := httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString(testURL))
-	postReq.Header.Set("Authorization", "Bearer "+s.token)
 	rr := httptest.NewRecorder()
-	wrapped.ServeHTTP(rr, postReq)
+	s.service.URLEncode(rr, postReq)
 	resp := rr.Result()
 	defer resp.Body.Close()
 	cookie := resp.Header.Get("Set-Cookie")
 
 	req := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)
-	req.Header.Set("Authorization", "Bearer "+s.token)
 	req.Header.Set("Cookie", cookie)
 	rr = httptest.NewRecorder()
 	s.service.GetUserURLs(rr, req)
