@@ -78,7 +78,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 				HttpOnly: true,
 			}
 			http.SetCookie(resp, updatedCookie)
-			return
+			resp.WriteHeader(http.StatusNoContent)
 		}
 	}
 }
