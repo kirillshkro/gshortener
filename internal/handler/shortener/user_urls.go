@@ -27,6 +27,16 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	token := cookie.Value
 	if token == "" {
 		resp.WriteHeader(http.StatusUnauthorized)
+		//обновим cookie
+		updatedCookie := &http.Cookie{
+			Name:     "auth_cookie",
+			Value:    token,
+			MaxAge:   3600 * 24 * 7, // 7 дней
+			Path:     "/",
+			Secure:   false,
+			HttpOnly: true,
+		}
+		http.SetCookie(resp, updatedCookie)
 		return
 	}
 
@@ -45,16 +55,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusNoContent)
 		return
 	}
-	//обновим cookie
-	updatedCookie := &http.Cookie{
-		Name:     "auth_cookie",
-		Value:    token,
-		MaxAge:   3600 * 24 * 7, // 7 дней
-		Path:     "/",
-		Secure:   false,
-		HttpOnly: true,
-	}
-	http.SetCookie(resp, updatedCookie)
+
 	//Отдаем пользователю все URL
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusOK)
