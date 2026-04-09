@@ -23,7 +23,12 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	//Получаем токен из cookie
+	//и проверяем его на валидность
 	token := cookie.Value
+	if token == "" {
+		resp.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
 	userID, err := claims.GetUserID(token)
 	if err != nil {
