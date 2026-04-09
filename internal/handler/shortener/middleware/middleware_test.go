@@ -64,6 +64,6 @@ func (s *HandlerLogTestSuite) TestHandlerWithLog() {
 	s.Assert().Greater(elapsed, time.Microsecond*0)
 }
 
-func TestMain(t *testing.T) {
+func TestMiddleware_Main(t *testing.T) {
 	suite.Run(t, new(HandlerLogTestSuite))
 }
