@@ -49,14 +49,3 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(fn)
 }
-
-// выдает куку
-func CookieAuthMiddleware(next http.Handler) http.Handler {
-	fn := func(resp http.ResponseWriter, req *http.Request) {
-		if req.Method == http.MethodPost {
-		}
-		next.ServeHTTP(resp, req)
-	}
-
-	return http.HandlerFunc(fn)
-}
