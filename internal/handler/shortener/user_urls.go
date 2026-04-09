@@ -41,6 +41,10 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusNoContent)
 		return
 	}
+	if len(urls) == 0 {
+		resp.WriteHeader(http.StatusNoContent)
+		return
+	}
 	//обновим cookie
 	updatedCookie := &http.Cookie{
 		Name:     "auth_cookie",
