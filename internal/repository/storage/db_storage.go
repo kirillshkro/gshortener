@@ -53,7 +53,7 @@ func (s *DBStorage) Create(reqData model.URLData) error {
 	return nil
 }
 
-func newDBStorage(conn string) (*DBStorage, error) {
+func newDBStorage(dsn string) (*DBStorage, error) {
 	dbLogger := logger.NewSlogLogger(
 		slog.New(
 			slog.NewJSONHandler(os.Stderr, nil),
@@ -61,7 +61,7 @@ func newDBStorage(conn string) (*DBStorage, error) {
 		logger.Config{
 			LogLevel:             logger.Info,
 			SlowThreshold:        500 * time.Millisecond,
-			ParameterizedQueries: true,
+			ParameterizedQueries: false,
 			Colorful:             true,
 		},
 	)
@@ -70,7 +70,7 @@ func newDBStorage(conn string) (*DBStorage, error) {
 		PrepareStmt:    true,
 		TranslateError: true,
 	}
-	db, err := gorm.Open(postgres.Open(conn), conf)
+	db, err := gorm.Open(postgres.Open(dsn), conf)
 	if err != nil {
 		return nil, err
 	}
