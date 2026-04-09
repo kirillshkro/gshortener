@@ -84,7 +84,5 @@ func setupRouter(service *shortener.Service) *mux.Router {
 	router.Use(middleware.HandlerWithLog)
 	//Добавляем middleware с сжатием траффика
 	router.Use(middleware.HandlerWithGzip)
-	//Добавляем middleware аутентификации
-	router.Use(middleware.AuthMiddleware)
 	return router
 }
