@@ -52,7 +52,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	var userURLs []types.UserURL
 	for _, url := range urls {
 		userURLs = append(userURLs, types.UserURL{
-			ShortURL:    url.ShortURL,
+			ShortURL:    string(s.ResultAddr) + "/" + url.ShortURL,
 			OriginalURL: url.OriginalURL,
 		})
 	}
