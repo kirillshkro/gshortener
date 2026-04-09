@@ -56,6 +56,7 @@ func (s *TestURLSuite) Test_GetUserURLs() {
 	s.Assert().NoError(err)
 	s.Assert().Equal(http.StatusOK, resp.StatusCode)
 	s.Assert().Equal("application/json", resp.Header.Get("Content-Type"))
+	s.Assert().NotEmptyf(resp.Cookies(), "Cookies not found")
 	if !s.Assert().Positive(len(buffer)) {
 		log.Println("Dump buffer: ", buffer)
 	}
