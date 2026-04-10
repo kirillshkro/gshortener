@@ -3,8 +3,10 @@ package storage
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/kirillshkro/gshortener/internal/mocks"
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -26,7 +28,7 @@ func (d *DBStorageTestSuite) TearDownSuite() {
 
 func (d *DBStorageTestSuite) TestDBStorage_Create() {
 	// Настройка ожидаемого поведения
-	expectedURLOriginalURL := types.DataURL{
+	expectedURLOriginalURL := model.URLData{
 		ShortURL:    "abc123",
 		OriginalURL: "https://example.com",
 	}
@@ -39,7 +41,7 @@ func (d *DBStorageTestSuite) TestDBStorage_Create() {
 
 func (d *DBStorageTestSuite) TestDBStorage_Create_EmptyShortURL() {
 
-	urlOriginalURL := types.DataURL{
+	urlOriginalURL := model.URLData{
 		ShortURL:    "",
 		OriginalURL: "https://example.com",
 	}
@@ -52,7 +54,7 @@ func (d *DBStorageTestSuite) TestDBStorage_Create_EmptyShortURL() {
 
 func (d *DBStorageTestSuite) TestDBStorage_Create_EmptyOriginalURL() {
 
-	urlOriginalURL := types.DataURL{
+	urlOriginalURL := model.URLData{
 		ShortURL:    "abc123",
 		OriginalURL: "",
 	}
@@ -66,7 +68,7 @@ func (d *DBStorageTestSuite) TestDBStorage_Create_EmptyOriginalURL() {
 
 func (d *DBStorageTestSuite) TestDBStorage_Create_BothEmpty() {
 
-	urlOriginalURL := types.DataURL{
+	urlOriginalURL := model.URLData{
 		ShortURL:    "",
 		OriginalURL: "",
 	}
@@ -88,6 +90,20 @@ func (d *DBStorageTestSuite) TestDBStorage_OriginalURL() {
 
 	d.Assert().NoError(err)
 	d.Assert().Equal(expectedOriginalURL, originalURL)
+}
+
+func (d *DBStorageTestSuite) TestDBStorage_GetUserURLs() {
+	userID := uuid.NewString()
+	d.mockStorage.EXPECT().GetUserURLs(userID).Return(
+		[]types.UserURL{
+			{
+				ShortURL:    "http://serv/abc123",
+				OriginalURL: "https://example.com/abracadabra",
+			},
+		}, nil)
+	urls, err := d.mockStorage.GetUserURLs(userID)
+	d.Assert().NoError(err)
+	d.Assert().Positive(len(urls))
 }
 
 func Test_Main(t *testing.T) {

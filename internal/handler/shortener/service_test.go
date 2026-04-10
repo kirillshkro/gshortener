@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 	"github.com/kirillshkro/gshortener/pkg/urlgen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -101,7 +102,7 @@ func (s *ServiceTestsSuite) Test_URLEncode() {
 func (s *ServiceTestsSuite) Test_URLDecode() {
 	var testURL = urlgen.GenerateURL(s.server.URL)
 	id := Hashing([]byte(testURL))
-	if err := s.service.Stor.Create(types.DataURL{
+	if err := s.service.Stor.Create(model.URLData{
 		ShortURL:    types.ShortURL(id),
 		OriginalURL: types.RawURL(testURL),
 	}); err != nil {

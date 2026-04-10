@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,22 +35,22 @@ func (s *storageOriginalURLSuite) Test_StorageOriginalURL() {
 }
 
 func (s *storageOriginalURLSuite) Test_StorageCreate() {
-	err := s.fs.Create(types.DataURL{
+	err := s.fs.Create(model.URLData{
 		ShortURL:    "test0",
 		OriginalURL: "testx0",
 	})
 	s.Require().NoError(err)
-	err = s.fs.Create(types.DataURL{
+	err = s.fs.Create(model.URLData{
 		ShortURL:    "test1",
 		OriginalURL: "testx1",
 	})
 	s.Require().NoError(err)
-	err = s.fs.Create(types.DataURL{
+	err = s.fs.Create(model.URLData{
 		ShortURL:    "test2",
 		OriginalURL: "testx2",
 	})
 	s.Require().NoError(err)
-	err = s.fs.Create(types.DataURL{
+	err = s.fs.Create(model.URLData{
 		ShortURL:    "test3",
 		OriginalURL: "testx3",
 	})

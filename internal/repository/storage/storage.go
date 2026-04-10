@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 )
 
 type MemoryStorage struct {
@@ -15,8 +16,13 @@ type MemoryStorage struct {
 //go:generate mockgen -destination internal/mocks/mock_dbstorage.go -package mocks ./internal/repository/storage IStorage
 type IStorage interface {
 	OriginalURL(key types.ShortURL) (types.RawURL, error)
-	Create(urlOriginalURL types.DataURL) error
+	Create(urlOriginalURL model.URLData) error
 	Close() error
+	UserGetter
+}
+
+type UserGetter interface {
+	GetUserURLs(userUUID string) ([]types.UserURL, error)
 }
 
 func NewMemoryStorage() *MemoryStorage {
@@ -29,7 +35,7 @@ func (s *MemoryStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 	return s.data[key], nil
 }
 
-func (s *MemoryStorage) Create(req types.DataURL) error {
+func (s *MemoryStorage) Create(req model.URLData) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	key := req.ShortURL
@@ -59,4 +65,8 @@ func (s *MemoryStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
 		}
 	}
 	return "", types.ErrNotFound
+}
+
+func (s *MemoryStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
+	return []types.UserURL{}, nil
 }
