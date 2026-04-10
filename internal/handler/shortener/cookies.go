@@ -19,9 +19,7 @@ func cookieExist(req *http.Request, cookieName string) bool {
 }
 
 func (s Service) createCookie(resp http.ResponseWriter) {
-	authCfg := auth.NewAuthConfig()
-	authUser := claims.NewAuthUser(authCfg)
-	token, err := authUser.Token()
+	token, err := s.generateAuthToken()
 	if err != nil {
 		s.logger.Error("cannot generate token: ", "error: ", err.Error())
 		resp.WriteHeader(http.StatusNoContent)
@@ -36,4 +34,10 @@ func (s Service) createCookie(resp http.ResponseWriter) {
 		Secure:   false,
 	}
 	http.SetCookie(resp, cookie)
+}
+
+func (s Service) generateAuthToken() (string, error) {
+	authCfg := auth.NewAuthConfig()
+	authUser := claims.NewAuthUser(authCfg)
+	return authUser.Token()
 }
