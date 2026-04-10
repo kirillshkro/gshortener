@@ -36,5 +36,4 @@ func (s Service) createCookie(resp http.ResponseWriter) {
 		Secure:   false,
 	}
 	http.SetCookie(resp, cookie)
-	resp.WriteHeader(http.StatusNoContent)
 }
