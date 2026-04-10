@@ -121,6 +121,10 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 		token = cookie.Value
+		if token == "" {
+			s.refreshUserCookie(resp)
+			return
+		}
 		if userUUID, err = claims.GetUserID(token); err != nil {
 			http.Error(resp, "can't get user id", http.StatusInternalServerError)
 			return
