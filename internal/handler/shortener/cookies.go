@@ -36,6 +36,23 @@ func (s Service) createCookie(resp http.ResponseWriter) {
 	http.SetCookie(resp, cookie)
 }
 
+func (s Service) refreshUserCookie(resp http.ResponseWriter) {
+	token, err := s.generateAuthToken()
+	if err != nil {
+		s.logger.Error("cannot refresh token: ", "error: ", err.Error())
+		return
+	}
+
+	http.SetCookie(resp, &http.Cookie{
+		Name:     "auth_cookie",
+		Value:    token,
+		MaxAge:   3600 * 24 * 7,
+		Path:     "/",
+		Secure:   false,
+		HttpOnly: true,
+	})
+}
+
 func (s Service) generateAuthToken() (string, error) {
 	authCfg := auth.NewAuthConfig()
 	authUser := claims.NewAuthUser(authCfg)
