@@ -59,9 +59,9 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 		if err = json.NewEncoder(resp).Encode(userURLs); err != nil {
 			s.logger.Error("cannot encode response: ", "error: ", err.Error())
 			return
-		} else {
-			//обновим cookie
-			s.createCookie(resp)
 		}
+	} else {
+		//обновим cookie
+		s.refreshUserCookie(resp)
 	}
 }
