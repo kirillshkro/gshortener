@@ -7,4 +7,5 @@ type URLData struct {
 	ShortURL    types.ShortURL `json:"short_url" gorm:"not null;uniqueIndex"`
 	OriginalURL types.RawURL   `json:"original_url" gorm:"not null;uniqueIndex"`
 	UserUUID    string         `json:"user_uuid" gorm:"not null;index"`
+	IsDeleted   bool           `json:"is_deleted" gorm:"not null;index;default:false"`
 }
