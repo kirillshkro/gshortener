@@ -301,3 +301,7 @@ func (f *FileStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
 func (f *FileStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return []types.UserURL{}, nil
 }
+
+func (f *FileStorage) DeleteURLs(shortURLs []types.ShortURL) error {
+	return nil
+}
