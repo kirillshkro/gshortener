@@ -80,6 +80,7 @@ func setupRouter(service *shortener.Service) *mux.Router {
 	router.Handle("/api/shorten", middleware.CreateShortURLHandler(service)).Methods(http.MethodPost)
 	//Добавляем хандлеры с получением информации о короткой ссылке
 	router.Handle("/api/user/urls", middleware.GetUserURLsHandler(service)).Methods(http.MethodGet)
+	router.Handle("/api/user/urls", middleware.DeleteUserURLsHandler(service)).Methods(http.MethodDelete)
 	//Добавляем middleware с логгированием
 	router.Use(middleware.HandlerWithLog)
 	//Добавляем middleware с сжатием траффика
