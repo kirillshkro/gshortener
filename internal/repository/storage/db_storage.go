@@ -146,8 +146,12 @@ func (s *DBStorage) DeleteUserURLs(userID string, shortURLs []types.ShortURL) er
 	if err := s.db.WithContext(context.Background()).Transaction(func(tx *gorm.DB) error {
 		for _, url := range shortURLs {
 			if _, err := gorm.G[model.URLData](tx).Where("short_url = ?", url).Where("user_id = ?", userID).Delete(context.Background()); err != nil {
+				tx.Rollback()
 				return err
 			}
+		}
+		if err := tx.Commit().Error; err != nil {
+			return err
 		}
 		return nil
 	}); err != nil {
