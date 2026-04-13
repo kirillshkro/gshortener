@@ -59,5 +59,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	} else {
 		//обновим cookie
 		s.refreshUserCookie(resp)
+		resp.WriteHeader(http.StatusNoContent)
+		return
 	}
 }
