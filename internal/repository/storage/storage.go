@@ -76,6 +76,6 @@ func (s *MemoryStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return []types.UserURL{}, nil
 }
 
-func (s *MemoryStorage) DeleteUserURLs(userID string, shortURL types.ShortURL) error {
+func (s *MemoryStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error {
 	return nil
 }
