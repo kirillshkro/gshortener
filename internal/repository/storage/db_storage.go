@@ -29,9 +29,14 @@ func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 	if shortURL == "" {
 		return "", types.ErrEmptyParams
 	}
+	var isDeleted bool
 	data, err := gorm.G[model.URLData](s.db).Select("original_url").Where("short_url = ?", shortURL).First(context.Background())
 	if err != nil {
 		return "", err
+	}
+	isDeleted = data.IsDeleted
+	if isDeleted {
+		return "", types.ErrNotFound
 	}
 	return data.OriginalURL, nil
 }
@@ -142,7 +147,7 @@ func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 func (s *DBStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error {
 
 	if err := s.db.WithContext(context.Background()).Transaction(func(tx *gorm.DB) error {
-		if _, err := gorm.G[model.URLData](tx).Where("user_id = ?", userID).Where("short_url = ?", shortURL).Update(context.Background(),
+		if _, err := gorm.G[model.URLData](tx).Where("user_uuid = ?", userID).Where("short_url = ?", shortURL).Update(context.Background(),
 			"is_deleted", true); err != nil {
 			tx.Rollback()
 			return err
