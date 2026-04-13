@@ -23,7 +23,7 @@ type IStorage interface {
 }
 
 type Deleter interface {
-	DeleteUserURLs(userID string, urls []types.ShortURL) error
+	DeleteUserURL(userID string, url types.ShortURL) error
 }
 
 type UserGetter interface {
@@ -76,6 +76,6 @@ func (s *MemoryStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return []types.UserURL{}, nil
 }
 
-func (s *MemoryStorage) DeleteUserURLs(userID string, shortURLs []types.ShortURL) error {
+func (s *MemoryStorage) DeleteUserURLs(userID string, shortURL types.ShortURL) error {
 	return nil
 }

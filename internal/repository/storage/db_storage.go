@@ -139,16 +139,13 @@ func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return result, nil
 }
 
-func (s *DBStorage) DeleteUserURLs(userID string, shortURLs []types.ShortURL) error {
-	if len(shortURLs) == 0 {
-		return nil
-	}
+func (s *DBStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error {
+
 	if err := s.db.WithContext(context.Background()).Transaction(func(tx *gorm.DB) error {
-		for _, url := range shortURLs {
-			if _, err := gorm.G[model.URLData](tx).Where("short_url = ?", url).Where("user_id = ?", userID).Delete(context.Background()); err != nil {
-				tx.Rollback()
-				return err
-			}
+		if _, err := gorm.G[model.URLData](tx).Where("user_id = ?", userID).Where("short_url = ?", shortURL).Update(context.Background(),
+			"is_deleted", true); err != nil {
+			tx.Rollback()
+			return err
 		}
 		if err := tx.Commit().Error; err != nil {
 			return err
