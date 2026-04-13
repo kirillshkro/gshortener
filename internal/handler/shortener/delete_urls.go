@@ -33,9 +33,16 @@ func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 			resp.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if err := s.Stor.DeleteUserURLs(userID, urls); err != nil {
-			resp.WriteHeader(http.StatusNoContent)
+		if len(urls) == 0 {
+			resp.WriteHeader(http.StatusBadRequest)
 			return
+		}
+		for _, url := range urls {
+			go s.Stor.DeleteUserURL(userID, url)
+			if err != nil {
+				resp.WriteHeader(http.StatusNoContent)
+				return
+			}
 		}
 		resp.WriteHeader(http.StatusAccepted)
 	} else {
