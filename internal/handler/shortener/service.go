@@ -33,6 +33,7 @@ type IService interface {
 	URLDecoder
 	BatchCreator
 	Getter
+	Deleter
 }
 
 type URLEncoder interface {
