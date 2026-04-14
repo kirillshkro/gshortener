@@ -38,7 +38,6 @@ func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 
 		for _, url := range urls {
 			go s.Stor.DeleteUserURL(userID, url)
-			s.logger.Info("deleted user URL", "url", url)
 		}
 	}
 
