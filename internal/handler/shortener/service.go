@@ -154,7 +154,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if err = s.Stor.Create(model.URLData{
 		ShortURL:    types.ShortURL(content),
 		OriginalURL: types.RawURL(bodyReq),
-		UserUUID:    userUUID,
+		UserID:      userUUID,
 	}); err != nil {
 		var eu *types.ErrUnique
 		if errors.As(err, &eu) {
