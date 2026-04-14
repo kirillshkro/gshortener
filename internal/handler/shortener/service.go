@@ -2,7 +2,6 @@ package shortener
 
 import (
 	"bufio"
-	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
@@ -253,11 +252,4 @@ func Hashing(data []byte) types.ShortURL {
 	shorthed := hashed[:6]
 	content := types.ShortURL(hex.EncodeToString(shorthed))
 	return content
-}
-
-func getUserUUID(ctx context.Context) (string, bool) {
-	if userUUID, ok := ctx.Value("user_uuid").(string); ok {
-		return userUUID, true
-	}
-	return "", false
 }
