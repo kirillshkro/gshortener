@@ -13,10 +13,7 @@ type Getter interface {
 }
 
 func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
-		resp.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
+
 	if cookieExist(req, "auth_cookie") {
 		cookie, err := req.Cookie("auth_cookie")
 		if err != nil {
@@ -42,7 +39,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 		if len(urls) == 0 {
-			s.createCookie(resp)
+			s.refreshUserCookie(resp)
 			return
 		}
 
