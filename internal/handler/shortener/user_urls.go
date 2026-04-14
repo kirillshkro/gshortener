@@ -17,7 +17,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	if cookieExist(req, "auth_cookie") {
 		cookie, err := req.Cookie("auth_cookie")
 		if err != nil {
-			resp.WriteHeader(http.StatusNoContent)
+			resp.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		//Получаем токен из cookie
