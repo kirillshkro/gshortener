@@ -36,11 +36,11 @@ func (s Service) createCookie(resp http.ResponseWriter) {
 	http.SetCookie(resp, cookie)
 }
 
-func (s Service) refreshUserCookie(resp http.ResponseWriter) {
+func (s Service) refreshUserCookie(resp http.ResponseWriter) string {
 	token, err := s.generateAuthToken()
 	if err != nil {
 		s.logger.Error("cannot refresh token: ", "error: ", err.Error())
-		return
+		return ""
 	}
 
 	http.SetCookie(resp, &http.Cookie{
@@ -52,6 +52,7 @@ func (s Service) refreshUserCookie(resp http.ResponseWriter) {
 		HttpOnly: true,
 	})
 	resp.WriteHeader(http.StatusNoContent)
+	return token
 }
 
 func (s Service) generateAuthToken() (string, error) {
