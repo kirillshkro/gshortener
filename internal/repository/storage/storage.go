@@ -19,10 +19,15 @@ type IStorage interface {
 	Create(urlOriginalURL model.URLData) error
 	Close() error
 	UserGetter
+	Deleter
 }
 
 type UserGetter interface {
 	GetUserURLs(userUUID string) ([]types.UserURL, error)
+}
+
+type Deleter interface {
+	DeleteUserURL(userID string, shortURL types.ShortURL) error
 }
 
 func NewMemoryStorage() *MemoryStorage {
@@ -69,4 +74,8 @@ func (s *MemoryStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
 
 func (s *MemoryStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return []types.UserURL{}, nil
+}
+
+func (s *MemoryStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error {
+	return nil
 }

@@ -139,6 +139,15 @@ func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return result, nil
 }
 
+func (s *DBStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error {
+	const uuidLen = 36
+	if (len(userID) != uuidLen) || len(shortURL) < 3 {
+		return types.ErrInvalidArgument
+	}
+
+	return nil
+}
+
 func (s *DBStorage) onConflict() *gorm.DB {
 	return s.db.Clauses(
 		clause.OnConflict{
