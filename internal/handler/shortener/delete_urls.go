@@ -3,7 +3,6 @@ package shortener
 import (
 	"encoding/json"
 	"net/http"
-	"sync"
 
 	"github.com/kirillshkro/gshortener/internal/config/auth"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener/claims"
@@ -37,15 +36,10 @@ func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		var wg sync.WaitGroup
-		wg.Add(len(urls))
-
 		for _, url := range urls {
-			defer wg.Done()
 			go s.Stor.DeleteUserURL(userID, url)
 			s.logger.Info("deleted user URL", "url", url)
 		}
-		wg.Wait()
 	}
 
 	resp.WriteHeader(http.StatusAccepted)
