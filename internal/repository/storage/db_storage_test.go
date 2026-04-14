@@ -106,6 +106,14 @@ func (d *DBStorageTestSuite) TestDBStorage_GetUserURLs() {
 	d.Assert().Positive(len(urls))
 }
 
+func (d *DBStorageTestSuite) TestDBStorage_DeleteUserURL() {
+	userID := uuid.NewString()
+	shortURL := "http://serv/abc123"
+	d.mockStorage.EXPECT().DeleteUserURL(userID, types.ShortURL(shortURL)).Return(nil)
+	err := d.mockStorage.DeleteUserURL(userID, types.ShortURL(shortURL))
+	d.Assert().NoError(err)
+}
+
 func Test_Main(t *testing.T) {
 	suite.Run(t, new(DBStorageTestSuite))
 }
