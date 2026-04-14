@@ -144,8 +144,17 @@ func (s *DBStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error 
 	if (len(userID) != uuidLen) || len(shortURL) < 3 {
 		return types.ErrInvalidArgument
 	}
-
-	return nil
+	ctx := context.Background()
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if _, err := gorm.G[model.URLData](tx).Where("user_uuid = ? AND short_url = ?", userID, shortURL).
+			Update(ctx, "is_deleted", true); err != nil {
+			tx.Rollback()
+			return err
+		}
+		tx.Commit()
+		return nil
+	})
+	return err
 }
 
 func (s *DBStorage) onConflict() *gorm.DB {
