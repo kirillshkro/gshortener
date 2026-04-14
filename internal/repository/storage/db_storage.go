@@ -59,7 +59,7 @@ func newDBStorage(dsn string) (*DBStorage, error) {
 			slog.NewJSONHandler(os.Stderr, nil),
 		),
 		logger.Config{
-			LogLevel:             logger.Info,
+			LogLevel:             logger.Warn,
 			SlowThreshold:        500 * time.Millisecond,
 			ParameterizedQueries: false,
 			Colorful:             true,
