@@ -139,6 +139,37 @@ func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return result, nil
 }
 
+func (s *DBStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error {
+	const uuidLen = 36
+	//Проверить длину UUID и корректность ввода данных
+	if len(userID) != uuidLen {
+		return types.ErrInvalidArgument
+	}
+	if len(userID) == 0 || len(shortURL) == 0 {
+		return types.ErrInvalidArgument
+	}
+
+	//Выполняем транзакцию для апдейта данных в таблице URLData
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		_, err := gorm.G[model.URLData](tx).Where("user_id = ? AND short_url = ?", userID, shortURL).
+			Update(context.Background(), "is_deleted", true)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		if err := tx.Commit(); err != nil {
+			tx.Rollback()
+			return tx.Error
+		}
+		return nil
+
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *DBStorage) onConflict() *gorm.DB {
 	return s.db.Clauses(
 		clause.OnConflict{
