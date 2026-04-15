@@ -193,6 +193,12 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	}
 	location, err := s.Stor.OriginalURL(types.ShortURL(id))
 	if err != nil {
+		var e *types.ErrURLDeleted
+		if errors.As(err, &e) {
+			s.logger.Error("URL not found", "error", err)
+			resp.WriteHeader(http.StatusGone)
+			return
+		}
 		http.Error(resp, "not found", http.StatusNotFound)
 		return
 	}
