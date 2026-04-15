@@ -29,9 +29,12 @@ func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 	if shortURL == "" {
 		return "", types.ErrEmptyParams
 	}
-	data, err := gorm.G[model.URLData](s.db).Select("original_url").Where("short_url = ?", shortURL).First(context.Background())
+	data, err := gorm.G[model.URLData](s.db).Select("is_deleted", "original_url").Where("short_url = ?", shortURL).First(context.Background())
 	if err != nil {
 		return "", err
+	}
+	if data.IsDeleted {
+		return "", &types.ErrURLDeleted{CauseURL: shortURL, Err: err}
 	}
 	return data.OriginalURL, nil
 }
@@ -59,7 +62,7 @@ func newDBStorage(dsn string) (*DBStorage, error) {
 			slog.NewJSONHandler(os.Stderr, nil),
 		),
 		logger.Config{
-			LogLevel:             logger.Warn,
+			LogLevel:             logger.Info,
 			SlowThreshold:        500 * time.Millisecond,
 			ParameterizedQueries: false,
 			Colorful:             true,
