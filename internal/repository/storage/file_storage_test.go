@@ -29,7 +29,7 @@ func (s *storageOriginalURLSuite) TearDownSuite() {
 func (s *storageOriginalURLSuite) Test_StorageOriginalURL() {
 	for i := range 2 {
 		ss := strconv.Itoa(i)
-		_, err := s.fs.OriginalURL("testx" + types.ShortURL(ss))
+		_, _, err := s.fs.OriginalURL("testx" + types.ShortURL(ss))
 		s.Require().NoError(err)
 	}
 }
