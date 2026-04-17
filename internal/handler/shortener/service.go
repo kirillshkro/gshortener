@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -193,8 +192,6 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	location, deleted, err := s.Stor.OriginalURL(types.ShortURL(id))
-	fmt.Println("location: ", location)
-	fmt.Println("deleted: ", deleted)
 	if err != nil {
 		http.Error(resp, "not found", http.StatusNotFound)
 		return
