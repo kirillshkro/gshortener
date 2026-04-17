@@ -147,7 +147,7 @@ func (s *DBStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error 
 	}
 	ctx := context.Background()
 	err := s.db.Transaction(func(tx *gorm.DB) error {
-		if _, err := gorm.G[model.URLData](tx).Where("user_uuid = ? AND short_url = ? AND is_deleted = false", userID, shortURL).
+		if _, err := gorm.G[model.URLData](tx).Where("user_uuid = ? AND short_url = ?", userID, shortURL).
 			Update(ctx, "is_deleted", true); err != nil {
 			tx.Rollback()
 			return err
