@@ -56,7 +56,7 @@ func (f *FileStorage) Close() error {
 /*
 Возвращает значение по ключу из файла
 */
-func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
+func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, bool, error) {
 	var (
 		fOriginalURL model.FileData
 		err          error
@@ -64,21 +64,21 @@ func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 	)
 
 	if info, err := f.file.Stat(); err != nil || info.Size() == 0 {
-		return "", err
+		return "", false, err
 	}
 	if _, err = f.file.Seek(0, 0); err != nil {
-		return "", err
+		return "", false, err
 	}
 	if err = json.NewDecoder(f.file).Decode(&items); err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	for _, fOriginalURL = range items {
 		if key == fOriginalURL.ShortURL {
-			return fOriginalURL.OriginalURL, nil
+			return fOriginalURL.OriginalURL, fOriginalURL.IsDeleted, nil
 		}
 	}
-	return "", err
+	return "", false, err
 }
 
 /*

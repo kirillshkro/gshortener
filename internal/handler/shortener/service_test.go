@@ -319,6 +319,46 @@ func (s *ServiceTestsSuite) Test_DuplicateURL() {
 	s.Assert().Equal(resp2.StatusCode, http.StatusConflict)
 }
 
+func (s *ServiceTestsSuite) Test_DecodeAfterDeleteURL() {
+	//создаем данные для теста
+	//cookie для авторизации и сессия
+	cookie := &http.Cookie{Name: "auth_cookie", Value: "some_value"}
+	testBody1 := []byte(`{"url":"http://example.com"}`)
+	short1 := Hashing([]byte("http:/example1.com"))
+	reqCreate1 := httptest.NewRequest(http.MethodPost, s.server.URL+"/api/shortlen", bytes.NewBuffer(testBody1))
+	reqCreate1.AddCookie(cookie)
+	rr := httptest.NewRecorder()
+	s.service.CreateShortURL(rr, reqCreate1)
+
+	testBody2 := []byte(`{"url":"http://example2.com"}`)
+	short2 := Hashing([]byte("http:/example2.com"))
+	reqCreate2 := httptest.NewRequest(http.MethodPost, s.server.URL+"/api/shortlen", bytes.NewBuffer(testBody2))
+	reqCreate2.AddCookie(cookie)
+	rr2 := httptest.NewRecorder()
+	s.service.CreateShortURL(rr2, reqCreate2)
+	shorts := []types.ShortURL{short1, short2}
+	var delBody bytes.Buffer
+	if err := json.NewEncoder(&delBody).Encode(shorts); err != nil {
+		s.T().Errorf("failed to encode data: %v", err)
+		return
+	}
+	//удаляем данные
+	reqDelURL1 := httptest.NewRequest(http.MethodDelete, "/api/user/urls", &delBody)
+	reqDelURL1.AddCookie(cookie)
+	rrDelURL1 := httptest.NewRecorder()
+	s.service.DeleteUserURLs(rrDelURL1, reqDelURL1)
+	s.Assert().Equal(http.StatusAccepted, rrDelURL1.Code)
+
+	//Проверяем код ответа при запросе "удаленного" URL
+
+	reqGet11 := httptest.NewRequest(http.MethodGet, "/"+string(shorts[0]), nil)
+	reqGet11.AddCookie(cookie)
+	rrGet11 := httptest.NewRecorder()
+	s.service.URLDecode(rrGet11, reqGet11)
+
+	s.Assert().Equal(http.StatusGone, rrGet11.Code)
+}
+
 func Test_Main(t *testing.T) {
 	suite.Run(t, new(ServiceTestsSuite))
 }
