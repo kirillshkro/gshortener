@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -191,19 +192,20 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	location, err := s.Stor.OriginalURL(types.ShortURL(id))
+	location, deleted, err := s.Stor.OriginalURL(types.ShortURL(id))
+	fmt.Println("location: ", location)
+	fmt.Println("deleted: ", deleted)
 	if err != nil {
-		var e *types.ErrURLDeleted
-		if errors.As(err, &e) {
-			s.logger.Error("URL not found", "error", err)
-			resp.WriteHeader(http.StatusGone)
-			return
-		}
 		http.Error(resp, "not found", http.StatusNotFound)
 		return
 	}
-	resp.Header().Set("Location", string(location))
-	resp.WriteHeader(http.StatusTemporaryRedirect)
+	if deleted {
+		http.Error(resp, "deleted", http.StatusGone)
+		return
+	} else {
+		resp.Header().Set("Location", string(location))
+		resp.WriteHeader(http.StatusTemporaryRedirect)
+	}
 }
 
 func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request) {
