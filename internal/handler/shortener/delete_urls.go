@@ -47,12 +47,15 @@ func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	wg.Add(len(urls))
+	chErr := make(chan error, len(urls))
 	for _, url := range urls {
-		go func(url types.ShortURL) {
+		go func(url types.ShortURL) chan error {
 			defer wg.Done()
 			if err := s.Stor.DeleteUserURL(userID, url); err != nil {
+				chErr <- err
 				s.logger.Error("failed to delete URL", "error", err)
 			}
+			return chErr
 		}(url)
 	}
 
