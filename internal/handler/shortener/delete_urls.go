@@ -3,9 +3,7 @@ package shortener
 import (
 	"encoding/json"
 	"net/http"
-	"sync"
 
-	"github.com/kirillshkro/gshortener/internal/config/auth"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener/claims"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
@@ -22,14 +20,19 @@ func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	authUser := claims.NewAuthUser(auth.NewAuthConfig())
-	userToken, err := authUser.Token()
+	userCookie, err := req.Cookie("auth_cookie")
 	if err != nil {
-		s.logger.Error("failed to get user token", "error", err)
+		s.logger.Error("failed to get auth cookie", "error", err)
 		resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	userToken := userCookie.Value
+	if userToken == "" {
+		s.logger.Error("user ID not found")
+		resp.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	userID, err := claims.GetUserID(userToken)
 	if err != nil {
 		s.logger.Error("failed to get user ID", "error", err)
@@ -39,25 +42,15 @@ func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 
 	var (
 		urls []types.ShortURL
-		wg   sync.WaitGroup
 	)
 
 	if err := json.NewDecoder(req.Body).Decode(&urls); err != nil {
 		s.logger.Error("failed to decode request body", "error", err)
 		return
 	}
-	wg.Add(len(urls))
-	chErr := make(chan error, len(urls))
-	for _, url := range urls {
-		go func(url types.ShortURL) chan error {
-			defer wg.Done()
-			if err := s.Stor.DeleteUserURL(userID, url); err != nil {
-				chErr <- err
-				s.logger.Error("failed to delete URL", "error", err)
-			}
-			return chErr
-		}(url)
-	}
 
+	for _, url := range urls {
+		go s.Stor.DeleteUserURL(userID, url)
+	}
 	resp.WriteHeader(http.StatusAccepted)
 }
