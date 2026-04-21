@@ -1,12 +1,13 @@
 package types
 
 type ErrURLDeleted struct {
-	CauseURL ShortURL
+	CauseURL RawURL
+	ShortURL ShortURL
 	Err      error
 }
 
 func (e *ErrURLDeleted) Error() string {
-	return "Field with key value: " + string(e.CauseURL) + " already deleted"
+	return "Field with key value: " + string(e.ShortURL) + " cooresponds " + string(e.CauseURL) + " already deleted"
 }
 
 func (e *ErrURLDeleted) Unwrap() error {

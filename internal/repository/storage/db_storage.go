@@ -35,7 +35,7 @@ func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 	}
 
 	if data.IsDeleted {
-		return "", &types.ErrAlreadyDelete{CauseURL: data.OriginalURL, ShortURL: shortURL}
+		return "", &types.ErrURLDeleted{CauseURL: data.OriginalURL, ShortURL: shortURL, Err: err}
 	}
 
 	return data.OriginalURL, nil

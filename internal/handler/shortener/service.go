@@ -191,18 +191,20 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	location, deleted, err := s.Stor.OriginalURL(types.ShortURL(id))
+	location, err := s.Stor.OriginalURL(types.ShortURL(id))
 	if err != nil {
+		var ad *types.ErrURLDeleted
+		if errors.As(err, &ad) {
+			http.Error(resp, "URL already deleted", http.StatusGone)
+			return
+		}
 		http.Error(resp, "not found", http.StatusNotFound)
 		return
 	}
-	if deleted {
-		http.Error(resp, "deleted", http.StatusGone)
-		return
-	} else {
-		resp.Header().Set("Location", string(location))
-		resp.WriteHeader(http.StatusTemporaryRedirect)
-	}
+
+	resp.Header().Set("Location", string(location))
+	resp.WriteHeader(http.StatusTemporaryRedirect)
+
 }
 
 func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request) {
