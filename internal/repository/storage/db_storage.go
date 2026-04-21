@@ -25,16 +25,20 @@ var (
 	dbonce     sync.Once
 )
 
-func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, bool, error) {
+func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 	if shortURL == "" {
-		return "", false, types.ErrEmptyParams
+		return "", types.ErrEmptyParams
 	}
 	data, err := gorm.G[model.URLData](s.db).Select("is_deleted", "original_url").Where("short_url = ?", shortURL).First(context.Background())
 	if err != nil {
-		return "", false, err
+		return "", err
 	}
 
-	return data.OriginalURL, data.IsDeleted, nil
+	if data.IsDeleted {
+		return "", &types.ErrAlreadyDelete{CauseURL: data.OriginalURL, ShortURL: shortURL}
+	}
+
+	return data.OriginalURL, nil
 }
 
 func (s *DBStorage) Create(reqData model.URLData) error {

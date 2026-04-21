@@ -15,8 +15,8 @@ type MemoryStorage struct {
 
 //go:generate mockgen -destination internal/mocks/mock_dbstorage.go -package mocks ./internal/repository/storage IStorage
 type IStorage interface {
-	// возвращаем три значения: исходный URL, флаг "удаления" URL и ошибку
-	OriginalURL(key types.ShortURL) (types.RawURL, bool, error)
+	// возвращаем исходный URL и ошибку
+	OriginalURL(key types.ShortURL) (types.RawURL, error)
 	Create(urlOriginalURL model.URLData) error
 	Close() error
 	UserGetter
@@ -37,8 +37,8 @@ func NewMemoryStorage() *MemoryStorage {
 	}
 }
 
-func (s *MemoryStorage) OriginalURL(key types.ShortURL) (types.RawURL, bool, error) {
-	return s.data[key], false, nil
+func (s *MemoryStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
+	return s.data[key], nil
 }
 
 func (s *MemoryStorage) Create(req model.URLData) error {
