@@ -24,3 +24,12 @@ func (e *ErrUnique) Error() string {
 func (e *ErrUnique) Unwrap() error {
 	return e.Err
 }
+
+type ErrAlreadyDelete struct {
+	CauseURL RawURL
+	ShortURL ShortURL
+}
+
+func (e *ErrAlreadyDelete) Error() string {
+	return "Field with key value: " + string(e.CauseURL) + " already deleted"
+}
