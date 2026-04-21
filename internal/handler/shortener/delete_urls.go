@@ -16,7 +16,6 @@ type Deleter interface {
 func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 
 	if !cookieExist(req, "auth_cookie") {
-		s.logger.Error("auth cookie not found")
 		resp.WriteHeader(http.StatusUnauthorized)
 		return
 	}
