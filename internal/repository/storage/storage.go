@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -28,7 +29,7 @@ type UserGetter interface {
 }
 
 type Deleter interface {
-	DeleteUserURL(userID string, shortURL types.ShortURL) error
+	DeleteUserURL(ctx context.Context, shortURL types.ShortURL) error
 }
 
 func NewMemoryStorage() *MemoryStorage {
@@ -77,6 +78,6 @@ func (s *MemoryStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return []types.UserURL{}, nil
 }
 
-func (s *MemoryStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error {
+func (s *MemoryStorage) DeleteUserURL(ctx context.Context, shortURL types.ShortURL) error {
 	return nil
 }

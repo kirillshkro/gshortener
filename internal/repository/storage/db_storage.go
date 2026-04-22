@@ -144,12 +144,22 @@ func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return result, nil
 }
 
-func (s *DBStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error {
-	const uuidLen = 36
+func (s *DBStorage) DeleteUserURL(ctx context.Context, shortURL types.ShortURL) error {
+	const (
+		uuidLen                   = 36
+		userIDKey types.UserIDKey = "userID"
+	)
+	var (
+		userID string
+		ok     bool
+	)
+	if userID, ok = ctx.Value(userIDKey).(string); !ok {
+		return types.ErrInvalidArgument
+	}
 	if (len(userID) != uuidLen) || len(shortURL) < 3 {
 		return types.ErrInvalidArgument
 	}
-	ctx := context.Background()
+
 	err := s.db.Transaction(func(tx *gorm.DB) error {
 		if _, err := gorm.G[model.URLData](tx).Where("user_uuid = ? AND short_url = ? AND is_deleted = false", userID, shortURL).
 			Update(ctx, "is_deleted", true); err != nil {
