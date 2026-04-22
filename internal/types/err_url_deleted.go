@@ -13,3 +13,5 @@ func (e *ErrURLDeleted) Error() string {
 func (e *ErrURLDeleted) Unwrap() error {
 	return e.Err
 }
+
+type UserIDKey string
