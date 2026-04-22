@@ -1,6 +1,7 @@
 package shortener
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -44,6 +45,10 @@ func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 		urls []types.ShortURL
 	)
 
+	const userIDKey types.UserIDKey = "user_id"
+
+	ctx := context.WithValue(context.Background(), userIDKey, userID)
+
 	if err := json.NewDecoder(req.Body).Decode(&urls); err != nil {
 		s.logger.Error("failed to decode request body", "error", err)
 		return
@@ -53,7 +58,7 @@ func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 
 	for _, url := range urls {
 		go func(url types.ShortURL) {
-			errChan <- s.Stor.DeleteUserURL(userID, url)
+			errChan <- s.Stor.DeleteUserURL(ctx, url)
 		}(url)
 	}
 
