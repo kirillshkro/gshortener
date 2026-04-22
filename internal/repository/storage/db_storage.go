@@ -147,7 +147,7 @@ func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 func (s *DBStorage) DeleteUserURL(ctx context.Context, shortURL types.ShortURL) error {
 	const (
 		uuidLen                   = 36
-		userIDKey types.UserIDKey = "userID"
+		userIDKey types.UserIDKey = "user_id"
 	)
 	var (
 		userID string
