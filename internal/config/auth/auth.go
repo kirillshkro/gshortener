@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"log"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -14,7 +15,7 @@ type AuthConfig struct {
 func NewAuthConfig() *AuthConfig {
 	var authConfig AuthConfig
 	if err := cleanenv.ReadEnv(&authConfig); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	return &authConfig
 }
