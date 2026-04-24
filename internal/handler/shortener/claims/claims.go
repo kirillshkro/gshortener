@@ -47,7 +47,7 @@ func GetUserID(token string) (string, error) {
 	}
 	claims := &AuthUser{}
 	if _, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte("c2VjcmV0a2V5X1NFQ1JFVF9LRVkK"), nil
+		return []byte(claims.Cfg.Secret), nil
 	}); err != nil {
 		return "", err
 	}
