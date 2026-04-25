@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kirillshkro/gshortener/internal/handler/shortener/claims"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
@@ -15,29 +14,13 @@ type Deleter interface {
 }
 
 func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
-
-	if !cookieExist(req, "auth_cookie") {
+	var (
+		userID string
+		ok     bool
+	)
+	userID, ok = req.Context().Value(types.UserID).(string)
+	if !ok {
 		resp.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	userCookie, err := req.Cookie("auth_cookie")
-	if err != nil {
-		s.logger.Error("failed to get auth cookie", "error", err)
-		resp.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	userToken := userCookie.Value
-	if userToken == "" {
-		s.logger.Error("user ID not found")
-		resp.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	userID, err := claims.GetUserID(userToken)
-	if err != nil {
-		s.logger.Error("failed to get user ID", "error", err)
-		resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
