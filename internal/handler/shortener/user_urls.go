@@ -18,7 +18,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	)
 	userID, ok = req.Context().Value(types.UserID).(string)
 	if !ok {
-		resp.WriteHeader(http.StatusUnauthorized)
+		resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	urls, err := s.Stor.GetUserURLs(userID)
@@ -27,7 +27,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if len(urls) == 0 {
-		resp.WriteHeader(http.StatusNoContent)
+		resp.WriteHeader(http.StatusNotFound)
 		s.createCookie(resp)
 		return
 	}
