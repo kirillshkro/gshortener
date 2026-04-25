@@ -27,7 +27,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if len(urls) == 0 {
-		resp.WriteHeader(http.StatusNotFound)
+		resp.WriteHeader(http.StatusNoContent)
 		s.createCookie(resp)
 		return
 	}
