@@ -23,7 +23,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	}
 	urls, err := s.Stor.GetUserURLs(userID)
 	if err != nil {
-		resp.WriteHeader(http.StatusInternalServerError)
+		resp.WriteHeader(http.StatusNoContent)
 		return
 	}
 	if len(urls) == 0 {
@@ -41,7 +41,7 @@ func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusOK)
 	if err = json.NewEncoder(resp).Encode(userURLs); err != nil {
-		resp.WriteHeader(http.StatusInternalServerError)
+		s.logger.Error("cannot encode response: ", "error: ", err.Error())
 		return
 	}
 
