@@ -13,8 +13,11 @@ import (
 	"strings"
 
 	"github.com/kirillshkro/gshortener/internal/config"
+	"github.com/kirillshkro/gshortener/internal/config/auth"
+	"github.com/kirillshkro/gshortener/internal/handler/shortener/claims"
 	"github.com/kirillshkro/gshortener/internal/repository/storage"
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 )
 
 type Service struct {
@@ -28,6 +31,8 @@ type IService interface {
 	URLEncoder
 	URLDecoder
 	BatchCreator
+	Getter
+	Deleter
 }
 
 type URLEncoder interface {
@@ -103,9 +108,54 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-Type", "text/plain")
 	content := Hashing(bodyReq)
 	outOriginalURL := baseURL + "/" + content
-	if err = s.Stor.Create(types.DataURL{
+	//выдать куку
+	var (
+		token    string
+		userUUID string
+		cookie   *http.Cookie
+	)
+	if cookieExist(req, "auth_cookie") {
+		cookie, err := req.Cookie("auth_cookie")
+		if err != nil {
+			http.Error(resp, "can't get cookie", http.StatusInternalServerError)
+			return
+		}
+		token = cookie.Value
+		if token == "" {
+			s.refreshUserCookie(resp)
+			return
+		}
+		if userUUID, err = claims.GetUserID(token); err != nil {
+			http.Error(resp, "can't get user id", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		authCfg := auth.NewAuthConfig()
+		authUser := claims.NewAuthUser(authCfg)
+		token, err = authUser.Token()
+		if err != nil {
+			http.Error(resp, "can't get token", http.StatusInternalServerError)
+			return
+		}
+		cookie = &http.Cookie{
+			Name:     "auth_cookie",
+			Value:    token,
+			MaxAge:   3600 * 24 * 7, // 7 дней
+			Path:     "/",
+			Secure:   false,
+			HttpOnly: true,
+		}
+		http.SetCookie(resp, cookie)
+		if userUUID, err = claims.GetUserID(token); err != nil {
+			http.Error(resp, "can't get user id", http.StatusInternalServerError)
+			return
+		}
+	}
+	//сохраняем в хранилище
+	if err = s.Stor.Create(model.URLData{
 		ShortURL:    types.ShortURL(content),
 		OriginalURL: types.RawURL(bodyReq),
+		UserUUID:    userUUID,
 	}); err != nil {
 		var eu *types.ErrUnique
 		if errors.As(err, &eu) {
@@ -143,11 +193,18 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	}
 	location, err := s.Stor.OriginalURL(types.ShortURL(id))
 	if err != nil {
+		var ad *types.ErrURLDeleted
+		if errors.As(err, &ad) {
+			http.Error(resp, "URL already deleted", http.StatusGone)
+			return
+		}
 		http.Error(resp, "not found", http.StatusNotFound)
 		return
 	}
+
 	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
+
 }
 
 func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request) {
@@ -175,7 +232,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	for _, item = range bodyReq {
 		hashURL := Hashing([]byte(item.OriginalURL))
 		//сохраняем в хранилище
-		if err = s.Stor.Create(types.DataURL{
+		if err = s.Stor.Create(model.URLData{
 			ShortURL:    hashURL,
 			OriginalURL: item.OriginalURL,
 		}); err != nil {

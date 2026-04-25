@@ -67,3 +67,11 @@ func PingHandler(s shortener.Pinger) http.Handler {
 func BatchCreateURLHandler(s shortener.IService) http.Handler {
 	return http.HandlerFunc(s.BatchCreateShortURL)
 }
+
+func GetUserURLsHandler(s shortener.Getter) http.Handler {
+	return http.HandlerFunc(s.GetUserURLs)
+}
+
+func DeleteUserURLsHandler(s shortener.Deleter) http.Handler {
+	return http.HandlerFunc(s.DeleteUserURLs)
+}

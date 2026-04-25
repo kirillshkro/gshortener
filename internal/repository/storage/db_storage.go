@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/kirillshkro/gshortener/internal/types"
+	"github.com/kirillshkro/gshortener/internal/types/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
-	"gorm.io/hints"
 )
 
 type DBStorage struct {
@@ -29,17 +29,21 @@ func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 	if shortURL == "" {
 		return "", types.ErrEmptyParams
 	}
-	th := s.onIndex()
-	data, err := gorm.G[types.DataURL](th).Select("original_url").Where("short_url = ?", shortURL).First(context.Background())
+	data, err := gorm.G[model.URLData](s.db).Select("is_deleted", "original_url").Where("short_url = ?", shortURL).First(context.Background())
 	if err != nil {
 		return "", err
 	}
+
+	if data.IsDeleted {
+		return "", &types.ErrURLDeleted{CauseURL: data.OriginalURL, ShortURL: shortURL, Err: err}
+	}
+
 	return data.OriginalURL, nil
 }
 
-func (s *DBStorage) Create(reqData types.DataURL) error {
+func (s *DBStorage) Create(reqData model.URLData) error {
 	tx := s.onConflict()
-	if err := gorm.G[types.DataURL](tx).Create(context.Background(), &reqData); err != nil {
+	if err := gorm.G[model.URLData](tx).Create(context.Background(), &reqData); err != nil {
 		slog.Error("Current error: " + err.Error())
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			shortURL, err := s.shortURL(reqData.OriginalURL)
@@ -54,7 +58,7 @@ func (s *DBStorage) Create(reqData types.DataURL) error {
 	return nil
 }
 
-func newDBStorage(conn string) (*DBStorage, error) {
+func newDBStorage(dsn string) (*DBStorage, error) {
 	dbLogger := logger.NewSlogLogger(
 		slog.New(
 			slog.NewJSONHandler(os.Stderr, nil),
@@ -71,7 +75,7 @@ func newDBStorage(conn string) (*DBStorage, error) {
 		PrepareStmt:    true,
 		TranslateError: true,
 	}
-	db, err := gorm.Open(postgres.Open(conn), conf)
+	db, err := gorm.Open(postgres.Open(dsn), conf)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +105,7 @@ func GetDBStorage(conn string) (*DBStorage, error) {
 func (s *DBStorage) populateTables() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := s.db.WithContext(ctx).AutoMigrate(&types.DataURL{}); err != nil {
+	if err := s.db.WithContext(ctx).AutoMigrate(&model.URLData{}); err != nil {
 		return err
 	}
 	return nil
@@ -114,11 +118,56 @@ func (s *DBStorage) Close() error {
 func (s *DBStorage) shortURL(originalURL types.RawURL) (types.ShortURL, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	urlOriginalURL, err := gorm.G[types.DataURL](s.db).Where("original_url = ?", originalURL).First(ctx)
+	urlOriginalURL, err := gorm.G[model.URLData](s.db).Where("original_url = ?", originalURL).First(ctx)
 	if err != nil {
 		return "", err
 	}
 	return urlOriginalURL.ShortURL, nil
+}
+
+func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
+	const uuidLen = 36
+	if len(userUUID) != uuidLen {
+		return nil, types.ErrInvalidArgument
+	}
+	urls, err := gorm.G[model.URLData](s.db).Select("short_url", "original_url").Where("user_uuid = ?", userUUID).Find(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	var result []types.UserURL
+	for _, url := range urls {
+		result = append(result, types.UserURL{
+			ShortURL:    string(url.ShortURL),
+			OriginalURL: string(url.OriginalURL),
+		})
+	}
+	return result, nil
+}
+
+func (s *DBStorage) DeleteUserURL(ctx context.Context, shortURL types.ShortURL) error {
+	const (
+		uuidLen                   = 36
+		userIDKey types.UserIDKey = "user_id"
+	)
+	var (
+		userID string
+		ok     bool
+	)
+	if userID, ok = ctx.Value(userIDKey).(string); !ok {
+		return types.ErrInvalidArgument
+	}
+	if (len(userID) != uuidLen) || len(shortURL) < 3 {
+		return types.ErrInvalidArgument
+	}
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if _, err := gorm.G[model.URLData](tx).Where("user_uuid = ? AND short_url = ? AND is_deleted = false", userID, shortURL).
+			Update(ctx, "is_deleted", true); err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
 }
 
 func (s *DBStorage) onConflict() *gorm.DB {
@@ -128,12 +177,5 @@ func (s *DBStorage) onConflict() *gorm.DB {
 			DoNothing: true,
 		},
 		clause.Returning{Columns: []clause.Column{{Name: "short_url"}}},
-	)
-}
-
-func (s *DBStorage) onIndex() *gorm.DB {
-	return s.db.Clauses(
-		hints.UseIndex("idx_short_url"),
-		hints.UseIndex("original_url_idx"),
 	)
 }
