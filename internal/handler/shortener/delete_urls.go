@@ -28,9 +28,7 @@ func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 		urls []types.ShortURL
 	)
 
-	const userIDKey types.UserIDKey = "user_id"
-
-	ctx := context.WithValue(context.Background(), userIDKey, userID)
+	ctx := context.WithValue(context.Background(), types.UserID, userID)
 
 	if err := json.NewDecoder(req.Body).Decode(&urls); err != nil {
 		s.logger.Error("failed to decode request body", "error", err)
