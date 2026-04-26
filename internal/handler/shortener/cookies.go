@@ -51,7 +51,6 @@ func (s Service) refreshUserCookie(resp http.ResponseWriter) {
 		Secure:   false,
 		HttpOnly: true,
 	})
-	resp.WriteHeader(http.StatusNoContent)
 }
 
 func (s Service) generateAuthToken() (string, error) {

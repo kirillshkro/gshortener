@@ -69,6 +69,20 @@ func (mr *MockIStorageMockRecorder) Create(urlOriginalURL any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockIStorage)(nil).Create), urlOriginalURL)
 }
 
+// DeleteUserURL mocks base method.
+func (m *MockIStorage) DeleteUserURL(userID string, shortURL types.ShortURL) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUserURL", userID, shortURL)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUserURL indicates an expected call of DeleteUserURL.
+func (mr *MockIStorageMockRecorder) DeleteUserURL(userID, shortURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserURL", reflect.TypeOf((*MockIStorage)(nil).DeleteUserURL), userID, shortURL)
+}
+
 // GetUserURLs mocks base method.
 func (m *MockIStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	m.ctrl.T.Helper()

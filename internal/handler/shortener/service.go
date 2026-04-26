@@ -2,7 +2,6 @@ package shortener
 
 import (
 	"bufio"
-	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
@@ -33,6 +32,7 @@ type IService interface {
 	URLDecoder
 	BatchCreator
 	Getter
+	Deleter
 }
 
 type URLEncoder interface {
@@ -193,11 +193,18 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	}
 	location, err := s.Stor.OriginalURL(types.ShortURL(id))
 	if err != nil {
+		var ad *types.ErrURLDeleted
+		if errors.As(err, &ad) {
+			http.Error(resp, "URL already deleted", http.StatusGone)
+			return
+		}
 		http.Error(resp, "not found", http.StatusNotFound)
 		return
 	}
+
 	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
+
 }
 
 func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request) {
@@ -253,11 +260,4 @@ func Hashing(data []byte) types.ShortURL {
 	shorthed := hashed[:6]
 	content := types.ShortURL(hex.EncodeToString(shorthed))
 	return content
-}
-
-func getUserUUID(ctx context.Context) (string, bool) {
-	if userUUID, ok := ctx.Value("user_uuid").(string); ok {
-		return userUUID, true
-	}
-	return "", false
 }

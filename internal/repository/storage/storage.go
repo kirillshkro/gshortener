@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -15,14 +16,20 @@ type MemoryStorage struct {
 
 //go:generate mockgen -destination internal/mocks/mock_dbstorage.go -package mocks ./internal/repository/storage IStorage
 type IStorage interface {
+	// возвращаем исходный URL и ошибку
 	OriginalURL(key types.ShortURL) (types.RawURL, error)
 	Create(urlOriginalURL model.URLData) error
 	Close() error
 	UserGetter
+	Deleter
 }
 
 type UserGetter interface {
 	GetUserURLs(userUUID string) ([]types.UserURL, error)
+}
+
+type Deleter interface {
+	DeleteUserURL(ctx context.Context, shortURL types.ShortURL) error
 }
 
 func NewMemoryStorage() *MemoryStorage {
@@ -69,4 +76,8 @@ func (s *MemoryStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
 
 func (s *MemoryStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return []types.UserURL{}, nil
+}
+
+func (s *MemoryStorage) DeleteUserURL(ctx context.Context, shortURL types.ShortURL) error {
+	return nil
 }
