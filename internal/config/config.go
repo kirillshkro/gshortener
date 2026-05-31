@@ -25,6 +25,8 @@ type Config struct {
 	ShortedURL string `json:"shorted_url" env:"SHORTED_URL" env-default:"http://localhost:8080"`
 	FileDB     string `json:"file_db" env:"FILE_STORAGE_PATH" env-default:"/tmp/shortener.json"`
 	DSN        string `json:"dsn" env:"DATABASE_DSN"`
+	AuditFile  string `env:"AUDIT_FILE"`
+	AUDITURL   string `env:"AUDIT_URL"`
 }
 
 func newConfig() *Config {
