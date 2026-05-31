@@ -9,9 +9,11 @@ const (
 	ActionFollow ActionType = "follow"
 )
 
-type AuditData struct {
+type auditData struct {
 	TimestampEvent time.Time  `json:"ts"`
 	Action         ActionType `json:"action"`
 	UserID         string     `json:"user_id"`
 	URL            string     `json:"url"`
 }
+
+type Event = auditData
