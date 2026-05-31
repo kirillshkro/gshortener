@@ -12,8 +12,8 @@ package mocks
 import (
 	reflect "reflect"
 
+	model "github.com/kirillshkro/gshortener/internal/model"
 	types "github.com/kirillshkro/gshortener/internal/types"
-	model "github.com/kirillshkro/gshortener/internal/types/model"
 	gomock "go.uber.org/mock/gomock"
 )
 

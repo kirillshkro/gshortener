@@ -10,8 +10,8 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/kirillshkro/gshortener/internal/model"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/kirillshkro/gshortener/internal/types/model"
 )
 
 type FileStorage struct {

@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/kirillshkro/gshortener/internal/model"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/kirillshkro/gshortener/internal/types/model"
 )
 
 type JSONEncoder interface {

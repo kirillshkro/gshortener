@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kirillshkro/gshortener/internal/mocks"
+	"github.com/kirillshkro/gshortener/internal/model"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/kirillshkro/gshortener/internal/types/model"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
