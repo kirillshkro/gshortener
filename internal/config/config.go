@@ -21,10 +21,10 @@ func GetConfig() *Config {
 //Конфиг программы.
 
 type Config struct {
-	Address    string `json:"address" env:"ADDRESS" env-default:"localhost:8080"`
-	ShortedURL string `json:"shorted_url" env:"SHORTED_URL" env-default:"http://localhost:8080"`
-	FileDB     string `json:"file_db" env:"FILE_STORAGE_PATH" env-default:"/tmp/shortener.json"`
-	DSN        string `json:"dsn" env:"DATABASE_DSN"`
+	Address    string `env:"ADDRESS" env-default:"localhost:8080"`
+	ShortedURL string `env:"SHORTED_URL" env-default:"http://localhost:8080"`
+	FileDB     string `env:"FILE_STORAGE_PATH" env-default:"/tmp/shortener.json"`
+	DSN        string `env:"DATABASE_DSN"`
 	AuditFile  string `env:"AUDIT_FILE"`
 	AUDITURL   string `env:"AUDIT_URL"`
 }
