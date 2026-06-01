@@ -7,7 +7,8 @@ import (
 )
 
 type Observer interface {
-	Notify(e types.Event)
+	Notify(e types.Event) error
+	Close() error
 }
 
 type Subject struct {
