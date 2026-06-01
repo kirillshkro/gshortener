@@ -7,7 +7,7 @@ import (
 )
 
 type Observer interface {
-	Notify(e types.Event) error
+	Notify(e *types.Event) error
 	Close() error
 }
 
@@ -39,7 +39,7 @@ func (s *Subject) Remove(o Observer) {
 	}
 }
 
-func (s *Subject) Notify(e types.Event) {
+func (s *Subject) Notify(e *types.Event) {
 	s.mu.RLock()
 	defer s.mu.Unlock()
 	for _, observer := range s.observers {
