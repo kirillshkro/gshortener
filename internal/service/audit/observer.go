@@ -16,6 +16,12 @@ type Subject struct {
 	mu        sync.RWMutex
 }
 
+func NewSubject() *Subject {
+	return &Subject{
+		observers: make([]Observer, 0),
+	}
+}
+
 func (s *Subject) Register(o Observer) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
