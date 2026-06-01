@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	auditService *FileAuditService
-	once         sync.Once
+	auditService    *FileAuditService
+	once            sync.Once
+	netAuditService *NetAuditService
 )
 
 type FileAuditService struct {
@@ -28,10 +29,12 @@ func newAuditService(filename string) (*FileAuditService, error) {
 	return &FileAuditService{file: file}, nil
 }
 
-func (a *FileAuditService) Notify(e types.Event) {
+func (a *FileAuditService) Notify(e types.Event) error {
 	if err := json.NewEncoder(a.file).Encode(e); err != nil {
 		log.Println("Could't write event to file ", a.file.Name())
+		return err
 	}
+	return nil
 }
 
 func GetAuditService(filename string) (*FileAuditService, error) {
@@ -46,6 +49,10 @@ func GetAuditService(filename string) (*FileAuditService, error) {
 	return auditService, err
 }
 
+func (a *FileAuditService) Close() error {
+	return a.file.Close()
+}
+
 type NetAuditService struct {
 	url    string
 	client *http.Client
@@ -57,9 +64,24 @@ func newNetAuditService(url string) (*NetAuditService, error) {
 	}, nil
 }
 
-func (a *NetAuditService) Notify(e types.Event) {
+func (a *NetAuditService) Notify(e types.Event) error {
 	bodyReq, _ := json.Marshal(e)
 	if _, err := a.client.Post(a.url, "application/json", bytes.NewBuffer(bodyReq)); err != nil {
 		log.Println("Error sending audit event:", err)
+		return err
 	}
+	return nil
+}
+
+func (a *NetAuditService) Close() error {
+	return nil
+}
+
+func GetNetAuditService(url string) (*NetAuditService, error) {
+	var err error
+
+	once.Do(func() {
+		netAuditService, err = newNetAuditService(url)
+	})
+	return netAuditService, err
 }
