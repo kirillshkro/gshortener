@@ -26,7 +26,7 @@ type Config struct {
 	FileDB     string `env:"FILE_STORAGE_PATH" env-default:"/tmp/shortener.json"`
 	DSN        string `env:"DATABASE_DSN"`
 	AuditFile  string `env:"AUDIT_FILE"`
-	AUDITURL   string `env:"AUDIT_URL"`
+	AuditURL   string `env:"AUDIT_URL"`
 }
 
 func newConfig() *Config {
@@ -43,5 +43,7 @@ func newConfig() *Config {
 		ShortedURL: cfg.ShortedURL,
 		FileDB:     cfg.FileDB,
 		DSN:        cfg.DSN,
+		AuditFile:  cfg.AuditFile,
+		AuditURL:   cfg.AuditURL,
 	}
 }
