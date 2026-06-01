@@ -12,6 +12,7 @@ import (
 	"github.com/kirillshkro/gshortener/internal/handler/shortener"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener/middleware"
 	"github.com/kirillshkro/gshortener/internal/repository/storage"
+	"github.com/kirillshkro/gshortener/internal/service/audit"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
@@ -32,6 +33,8 @@ func parseFlags() {
 	flag.StringVar(&cfg.ShortedURL, "b", cfg.ShortedURL, "Set base shorted url")
 	flag.StringVar(&cfg.FileDB, "f", cfg.FileDB, "Set path to database")
 	flag.StringVar(&cfg.DSN, "d", cfg.DSN, "Set database connection string")
+	flag.StringVar(&cfg.AuditURL, "audit-url", cfg.AuditURL, "Set audit service url")
+	flag.StringVar(&cfg.AuditFile, "audit-file", cfg.AuditFile, "Set audit file path")
 	flag.Parse()
 	setupService(cfg)
 }
@@ -65,6 +68,24 @@ func setupService(cfg *config.Config) *shortener.Service {
 			logger.Info("Using database storage")
 			service.Stor = stor
 		}
+	}
+
+	if cfg.AuditFile != "" {
+		var subject audit.Subject
+		fileAudit, err := audit.GetAuditService(cfg.AuditFile)
+		if err != nil {
+			logger.Warn("Failed to create audit service", "Warn", err)
+		}
+		subject.Register(fileAudit)
+	}
+
+	if cfg.AuditURL != "" {
+		var subject audit.Subject
+		urlAudit, err := audit.GetNetAuditService(cfg.AuditURL)
+		if err != nil {
+			logger.Warn("Failed to create audit service", "Warn", err)
+		}
+		subject.Register(urlAudit)
 	}
 
 	return service
