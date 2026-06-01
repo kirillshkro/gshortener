@@ -1,7 +1,5 @@
 package types
 
-import "time"
-
 type ActionType string
 
 const (
@@ -10,7 +8,7 @@ const (
 )
 
 type auditData struct {
-	TimestampEvent time.Time  `json:"ts"`
+	TimestampEvent int64      `json:"ts"`
 	Action         ActionType `json:"action"`
 	UserID         string     `json:"user_id"`
 	URL            string     `json:"url"`
