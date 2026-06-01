@@ -1,7 +1,10 @@
 package audit
 
 import (
+	"bytes"
 	"encoding/json"
+	"log"
+	"net/http"
 	"os"
 	"sync"
 
@@ -9,30 +12,29 @@ import (
 )
 
 var (
-	auditService *AuditService
+	auditService *FileAuditService
 	once         sync.Once
 )
 
-type AuditService struct {
+type FileAuditService struct {
 	file *os.File
 }
 
-func newAuditService(filename string) (*AuditService, error) {
+func newAuditService(filename string) (*FileAuditService, error) {
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, err
 	}
-	return &AuditService{file: file}, nil
+	return &FileAuditService{file: file}, nil
 }
 
-func (a *AuditService) Notify(e types.Event) error {
+func (a *FileAuditService) Notify(e types.Event) {
 	if err := json.NewEncoder(a.file).Encode(e); err != nil {
-		return err
+		log.Println("Could't write event to file ", a.file.Name())
 	}
-	return nil
 }
 
-func GetAuditService(filename string) (*AuditService, error) {
+func GetAuditService(filename string) (*FileAuditService, error) {
 	var (
 		err error
 	)
@@ -42,4 +44,22 @@ func GetAuditService(filename string) (*AuditService, error) {
 		}
 	})
 	return auditService, err
+}
+
+type NetAuditService struct {
+	url    string
+	client *http.Client
+}
+
+func newNetAuditService(url string) (*NetAuditService, error) {
+	return &NetAuditService{url: url,
+		client: &http.Client{},
+	}, nil
+}
+
+func (a *NetAuditService) Notify(e types.Event) {
+	bodyReq, _ := json.Marshal(e)
+	if _, err := a.client.Post(a.url, "application/json", bytes.NewBuffer(bodyReq)); err != nil {
+		log.Println("Error sending audit event:", err)
+	}
 }
