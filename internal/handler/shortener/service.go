@@ -11,12 +11,14 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/kirillshkro/gshortener/internal/config"
 	"github.com/kirillshkro/gshortener/internal/config/auth"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener/claims"
 	"github.com/kirillshkro/gshortener/internal/model"
 	"github.com/kirillshkro/gshortener/internal/repository/storage"
+	"github.com/kirillshkro/gshortener/internal/service/audit"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
@@ -25,6 +27,7 @@ type Service struct {
 	ResultAddr types.ShortURL
 	Stor       storage.IStorage
 	logger     *slog.Logger
+	subject    *audit.Subject
 }
 
 type IService interface {
@@ -59,6 +62,7 @@ func NewService() *Service {
 		ResultAddr: types.ShortURL("localhost:8080"),
 		Stor:       stor,
 		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
+		subject:    audit.NewSubject(),
 	}
 }
 
@@ -74,6 +78,7 @@ func NewServiceWithAddr(addr types.RawURL) *Service {
 		ResultAddr: types.ShortURL("localhost:8080"),
 		Stor:       stor,
 		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
+		subject:    audit.NewSubject(),
 	}
 }
 
@@ -89,6 +94,7 @@ func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.Shor
 		ResultAddr: shortAddr,
 		Stor:       stor,
 		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
+		subject:    audit.NewSubject(),
 	}
 }
 
@@ -176,6 +182,14 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if _, err = resp.Write([]byte(outOriginalURL)); err != nil {
 		s.logger.Error("don't send response because by " + err.Error())
 	}
+
+	event := &types.Event{
+		TimestampEvent: time.Now().UnixNano(),
+		Action:         types.ActionCreate,
+		UserID:         userUUID,
+		URL:            string(bodyReq),
+	}
+	s.subject.Notify(event)
 }
 
 // Принимает на вход сокращенный URL,
@@ -205,6 +219,13 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 
+	event := &types.Event{
+		TimestampEvent: time.Now().UnixNano(),
+		Action:         types.ActionFollow,
+		UserID:         "",
+		URL:            string(location),
+	}
+	s.subject.Notify(event)
 }
 
 func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request) {
