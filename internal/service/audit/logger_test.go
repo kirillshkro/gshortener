@@ -8,7 +8,7 @@ import (
 
 type AuditTestSuite struct {
 	suite.Suite
-	auditService *AuditService
+	auditService *FileAuditService
 }
 
 func (s *AuditTestSuite) SetupSuite() {
