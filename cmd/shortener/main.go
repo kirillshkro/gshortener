@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log"
 	"log/slog"
@@ -29,9 +30,12 @@ func main() {
 		Addr:    cfg.Address,
 		Handler: router,
 	}
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatalf("error listen server is %s\n", err.Error())
-	}
+	go func() {
+		log.Printf("server is listening on %s\n", cfg.Address)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("error listen server is %s\n", err.Error())
+		}
+	}()
 	gracefulShutdown(server)
 }
 
