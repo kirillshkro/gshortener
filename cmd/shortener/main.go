@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kirillshkro/gshortener/internal/config"
@@ -21,9 +25,14 @@ func main() {
 	parseFlags()
 	service := setupService(cfg)
 	router := setupRouter(service)
-	if err := http.ListenAndServe(cfg.Address, router); err != nil {
-		fmt.Printf("error listen server is %s\n", err.Error())
+	server := &http.Server{
+		Addr:    cfg.Address,
+		Handler: router,
 	}
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("error listen server is %s\n", err.Error())
+	}
+	gracefulShutdown(server)
 }
 
 func parseFlags() {
@@ -88,4 +97,17 @@ func setupRouter(service *shortener.Service) *mux.Router {
 	//Добавляем middleware с сжатием траффика
 	router.Use(middleware.HandlerWithGzip)
 	return router
+}
+
+func gracefulShutdown(server *http.Server) {
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, syscall.SIGTERM, syscall.SIGINT)
+	<-interrupt
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Failed to shutdown server: %v", err)
+		log.Fatalf("Server stopped")
+	}
+	log.Println("Shutting down server...")
 }
