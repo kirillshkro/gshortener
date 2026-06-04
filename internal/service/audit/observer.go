@@ -13,7 +13,7 @@ type Observer interface {
 
 type Subject struct {
 	observers []Observer
-	mu        sync.RWMutex
+	mu        sync.Mutex
 }
 
 func NewSubject() *Subject {
@@ -40,7 +40,7 @@ func (s *Subject) Remove(o Observer) {
 }
 
 func (s *Subject) Notify(e *types.Event) {
-	s.mu.RLock()
+	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, observer := range s.observers {
 		go observer.Notify(e)
