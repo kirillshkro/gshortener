@@ -15,6 +15,7 @@ import (
 var (
 	auditService    *FileAuditService
 	once            sync.Once
+	netOnce         sync.Once
 	netAuditService *NetAuditService
 )
 
@@ -100,7 +101,7 @@ func (a *NetAuditService) Close() error {
 func GetNetAuditService(url string) (*NetAuditService, error) {
 	var err error
 
-	once.Do(func() {
+	netOnce.Do(func() {
 		netAuditService, err = newNetAuditService(url)
 	})
 	return netAuditService, err
