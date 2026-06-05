@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kirillshkro/gshortener/internal/model"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/kirillshkro/gshortener/internal/types/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

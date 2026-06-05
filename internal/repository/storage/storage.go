@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/kirillshkro/gshortener/internal/model"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/kirillshkro/gshortener/internal/types/model"
 )
 
 type MemoryStorage struct {

@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/kirillshkro/gshortener/internal/model"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/kirillshkro/gshortener/internal/types/model"
 	"github.com/stretchr/testify/suite"
 )
 

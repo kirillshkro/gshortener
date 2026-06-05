@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/kirillshkro/gshortener/internal/model"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/kirillshkro/gshortener/internal/types/model"
 	"github.com/kirillshkro/gshortener/pkg/urlgen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
