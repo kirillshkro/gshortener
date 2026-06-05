@@ -18,7 +18,7 @@ func (s *AuditTestSuite) SetupSuite() {
 	)
 	s.auditService, err = GetAuditService("/tmp/audit.log")
 	s.Require().NoError(err)
-	s.netInstance, err = GetNetAuditService("http://localhost:8080")
+	s.netInstance, err = GetNetAuditService("http://localhost:9000")
 	s.Require().NoError(err)
 }
 
@@ -36,7 +36,7 @@ func (s *AuditTestSuite) Test_GetNetAuditInstance() {
 	var (
 		err error
 	)
-	instance, err := GetNetAuditService("http://localhost:8080")
+	instance, err := GetNetAuditService("http://localhost:9000")
 	if s.Assert().NoError(err) {
 		s.Assert().Equal(s.netInstance, instance)
 	}
