@@ -3,6 +3,7 @@ package audit
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -21,9 +22,24 @@ type FileAuditService struct {
 	file *os.File
 }
 
-func newAuditService(filename string) (*FileAuditService, error) {
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
+func newFileAuditService(filename string) (*FileAuditService, error) {
+	var file *os.File
+	var err error
+
+	// Проверяем, существует ли файл
+	if _, err = os.Stat(filename); err == nil {
+		// Файл существует, открываем его для записи в конец
+		file, err = os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			return nil, err
+		}
+	} else if errors.Is(err, os.ErrNotExist) {
+		// Файл не существует, создаем новый файл
+		file, err = os.Create(filename)
+		if err != nil {
+			return nil, err
+		}
+	} else {
 		return nil, err
 	}
 	return &FileAuditService{file: file}, nil
@@ -43,7 +59,7 @@ func GetAuditService(filename string) (*FileAuditService, error) {
 	)
 	once.Do(func() {
 		if auditService == nil {
-			auditService, err = newAuditService(filename)
+			auditService, err = newFileAuditService(filename)
 		}
 	})
 	return auditService, err
