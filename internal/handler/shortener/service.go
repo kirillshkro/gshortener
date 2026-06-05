@@ -276,6 +276,12 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	}
 }
 
+func (s *Service) SetSubject(subj *audit.Subject) {
+	if subj != nil {
+		s.subject = subj
+	}
+}
+
 func Hashing(data []byte) types.ShortURL {
 	hashed := sha1.Sum(data)
 	shorthed := hashed[:6]
