@@ -72,13 +72,14 @@ func (a *App) setupService() (*shortener.Service, error) {
 		}
 	}
 
+	service.SetSubject(&subject)
+
 	if a.cfg.AuditFile != "" {
 		fileAudit, err := audit.GetAuditService(a.cfg.AuditFile)
 		if err != nil {
 			logger.Warn("Failed to create audit service", "Warn", err)
 		}
 		subject.Register(fileAudit)
-		service.SetSubject(&subject)
 	}
 
 	if a.cfg.AuditURL != "" {
@@ -87,7 +88,6 @@ func (a *App) setupService() (*shortener.Service, error) {
 			logger.Warn("Failed to create audit service", "Warn", err)
 		}
 		subject.Register(urlAudit)
-		service.SetSubject(&subject)
 	}
 
 	return service, nil
