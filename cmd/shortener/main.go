@@ -55,8 +55,9 @@ func parseFlags() {
 func setupService(cfg *config.Config) *shortener.Service {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	var (
-		stor storage.IStorage
-		err  error
+		stor    storage.IStorage
+		err     error
+		subject audit.Subject
 	)
 	service := shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(cfg.Address), types.ShortURL(cfg.ShortedURL))
 	if cfg.DSN == "" && cfg.FileDB == "" {
@@ -84,21 +85,21 @@ func setupService(cfg *config.Config) *shortener.Service {
 	}
 
 	if cfg.AuditFile != "" {
-		var subject audit.Subject
 		fileAudit, err := audit.GetAuditService(cfg.AuditFile)
 		if err != nil {
 			logger.Warn("Failed to create audit service", "Warn", err)
 		}
 		subject.Register(fileAudit)
+		service.SetSubject(&subject)
 	}
 
 	if cfg.AuditURL != "" {
-		var subject audit.Subject
 		urlAudit, err := audit.GetNetAuditService(cfg.AuditURL)
 		if err != nil {
 			logger.Warn("Failed to create audit service", "Warn", err)
 		}
 		subject.Register(urlAudit)
+		service.SetSubject(&subject)
 	}
 
 	return service
