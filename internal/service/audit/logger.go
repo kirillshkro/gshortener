@@ -81,7 +81,11 @@ func newNetAuditService(url string) (*NetAuditService, error) {
 }
 
 func (a *NetAuditService) Notify(e *types.Event) error {
-	bodyReq, _ := json.Marshal(e)
+	bodyReq, err := json.Marshal(e)
+	if err != nil {
+		log.Println("Error marshalling audit event:", err)
+		return err
+	}
 	if _, err := a.client.Post(a.url, "application/json", bytes.NewBuffer(bodyReq)); err != nil {
 		log.Println("Error sending audit event:", err)
 		return err
