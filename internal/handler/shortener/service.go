@@ -22,6 +22,7 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
+// Service struct represents the main service for URL shortening.
 type Service struct {
 	ServAddr   types.RawURL
 	ResultAddr types.ShortURL
@@ -30,6 +31,7 @@ type Service struct {
 	subject    *audit.Subject
 }
 
+// IService interface defines the contract for all operations related to URL handling.
 type IService interface {
 	URLEncoder
 	URLDecoder
@@ -38,19 +40,22 @@ type IService interface {
 	Deleter
 }
 
+// URLEncoder interface defines methods for encoding URLs.
 type URLEncoder interface {
 	URLEncode(resp http.ResponseWriter, req *http.Request)
 }
 
+// URLDecoder interface defines methods for decoding URLs.
 type URLDecoder interface {
 	URLDecode(resp http.ResponseWriter, req *http.Request)
 }
 
+// BatchCreator interface defines methods for batch creation of short URLs.
 type BatchCreator interface {
 	BatchCreateShortURL(resp http.ResponseWriter, req *http.Request)
 }
 
-// Создает сервис со значениями по умолчанию
+// NewService creates a new Service instance with default values.
 func NewService() *Service {
 	cfg := config.GetConfig()
 	stor, err := storage.GetFileStorage(cfg.FileDB)
@@ -66,7 +71,7 @@ func NewService() *Service {
 	}
 }
 
-// Создает сервис с заданным IP-адресом и портом
+// NewServiceWithAddr creates a new Service instance with the specified address.
 func NewServiceWithAddr(addr types.RawURL) *Service {
 	cfg := config.GetConfig()
 	stor, err := storage.GetFileStorage(cfg.FileDB)
@@ -82,7 +87,7 @@ func NewServiceWithAddr(addr types.RawURL) *Service {
 	}
 }
 
-// Создает сервис с заданными IP-адресом и портом, и URL сокращенных ссылок
+// NewServiceWithAddrWithAddrShortener creates a new Service instance with the specified addresses.
 func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.ShortURL) *Service {
 	cfg := config.GetConfig()
 	stor, err := storage.GetFileStorage(cfg.FileDB)
@@ -98,7 +103,7 @@ func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.Shor
 	}
 }
 
-// Принимает на вход URL, возвращает базовый URL сервиса + хэш исходного URL
+// URLEncode handles the encoding of URLs.
 func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
@@ -192,8 +197,7 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	s.subject.Notify(event)
 }
 
-// Принимает на вход сокращенный URL,
-// возвращает полный URL
+// URLDecode handles the decoding of URLs.
 func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
@@ -228,6 +232,7 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	s.subject.Notify(event)
 }
 
+// BatchCreateShortURL handles the batch creation of short URLs.
 func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
@@ -252,7 +257,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	}
 	for _, item = range bodyReq {
 		hashURL := Hashing([]byte(item.OriginalURL))
-		//сохраняем в хранилище
+		// сохраняем в хранилище
 		if err = s.Stor.Create(model.URLData{
 			ShortURL:    hashURL,
 			OriginalURL: item.OriginalURL,
@@ -267,7 +272,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 		answer = append(answer, out)
 	}
 
-	//устанавливаем тип ответа
+	// устанавливаем тип ответа
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusCreated)
 	if err = json.NewEncoder(resp).Encode(answer); err != nil {
@@ -276,12 +281,14 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	}
 }
 
+// SetSubject sets the audit subject for the service.
 func (s *Service) SetSubject(subj *audit.Subject) {
 	if subj != nil {
 		s.subject = subj
 	}
 }
 
+// Hashing generates a short URL hash from the given data.
 func Hashing(data []byte) types.ShortURL {
 	hashed := sha1.Sum(data)
 	shorthed := hashed[:6]
