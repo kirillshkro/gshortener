@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// DBStorage struct represents the storage implementation using a database.
 type DBStorage struct {
 	db *gorm.DB
 }
@@ -25,6 +26,7 @@ var (
 	dbonce     sync.Once
 )
 
+// OriginalURL retrieves the original URL for a given short URL.
 func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 	if shortURL == "" {
 		return "", types.ErrEmptyParams
@@ -41,6 +43,7 @@ func (s *DBStorage) OriginalURL(shortURL types.ShortURL) (types.RawURL, error) {
 	return data.OriginalURL, nil
 }
 
+// Create creates a new URL entry in the database.
 func (s *DBStorage) Create(reqData model.URLData) error {
 	tx := s.onConflict()
 	if err := gorm.G[model.URLData](tx).Create(context.Background(), &reqData); err != nil {
@@ -85,6 +88,7 @@ func newDBStorage(dsn string) (*DBStorage, error) {
 	}, nil
 }
 
+// GetDBStorage retrieves the singleton instance of DBStorage.
 func GetDBStorage(conn string) (*DBStorage, error) {
 	var (
 		err error
@@ -111,6 +115,7 @@ func (s *DBStorage) populateTables() error {
 	return nil
 }
 
+// Close closes the database connection.
 func (s *DBStorage) Close() error {
 	return nil
 }
@@ -125,6 +130,7 @@ func (s *DBStorage) shortURL(originalURL types.RawURL) (types.ShortURL, error) {
 	return urlOriginalURL.ShortURL, nil
 }
 
+// GetUserURLs retrieves all URLs associated with a given user UUID.
 func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	const uuidLen = 36
 	if len(userUUID) != uuidLen {
@@ -144,6 +150,7 @@ func (s *DBStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
 	return result, nil
 }
 
+// DeleteUserURL deletes a URL entry for a given user UUID and short URL.
 func (s *DBStorage) DeleteUserURL(ctx context.Context, shortURL types.ShortURL) error {
 	const (
 		uuidLen                   = 36
