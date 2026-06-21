@@ -7,10 +7,12 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
+// Getter interface defines methods for retrieving user URLs.
 type Getter interface {
 	GetUserURLs(resp http.ResponseWriter, req *http.Request)
 }
 
+// Method for retrieving user URLs.
 func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	var (
 		userID string
