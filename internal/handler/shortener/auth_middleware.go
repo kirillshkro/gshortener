@@ -8,6 +8,9 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
+// AuthMiddleware is a middleware function that checks if a user is authenticated
+// and adds the user ID to the request context if authentication is successful.
+// It verifies the authentication cookie and validates the token contained within.
 func (s Service) AuthMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		// Проверка авторизации пользователя
