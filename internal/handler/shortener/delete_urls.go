@@ -9,10 +9,15 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
+// Deleter interface defines the contract for deleting user URLs
 type Deleter interface {
+	// DeleteUserURLs handles the deletion of multiple user URLs
 	DeleteUserURLs(resp http.ResponseWriter, req *http.Request)
 }
 
+// DeleteUserURLs handles the deletion of multiple user URLs
+// It expects a JSON array of URLs in the request body
+// Returns HTTP 202 Accepted on successful initiation of deletion
 func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 	var (
 		userID string
