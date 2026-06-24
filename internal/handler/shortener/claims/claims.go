@@ -1,3 +1,4 @@
+// Package claims provides functionality for JWT token handling and user authentication claims.
 package claims
 
 import (
@@ -10,6 +11,8 @@ import (
 	"github.com/kirillshkro/gshortener/internal/config/auth"
 )
 
+// AuthUser represents the structure of JWT claims for authenticated users.
+// It embeds jwt.RegisteredClaims and adds custom user-specific fields.
 type AuthUser struct {
 	jwt.RegisteredClaims
 	UserID string
@@ -21,6 +24,14 @@ var logger *slog.Logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerO
 	AddSource: true,
 }))
 
+// NewAuthUser creates and returns a new AuthUser instance with default claims.
+// It initializes the user ID with a UUID and sets the expiration time based on the provided configuration.
+//
+// Parameters:
+//   - cfg: pointer to authentication configuration containing expiration time and secret key
+//
+// Returns:
+//   - pointer to newly created AuthUser instance
 func NewAuthUser(cfg *auth.AuthConfig) *AuthUser {
 	user := &AuthUser{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -32,6 +43,12 @@ func NewAuthUser(cfg *auth.AuthConfig) *AuthUser {
 	return user
 }
 
+// Token generates a JWT token string based on the AuthUser claims.
+// It uses HS256 signing method and the secret key from the configuration.
+//
+// Returns:
+//   - string: generated JWT token
+//   - error: if token generation fails
 func (a AuthUser) Token() (string, error) {
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, a).SignedString([]byte(a.Cfg.Secret))
 	if err != nil {
@@ -41,6 +58,15 @@ func (a AuthUser) Token() (string, error) {
 	return token, nil
 }
 
+// GetUserID extracts and returns the user ID from a JWT token string.
+// If the token is empty, it returns an empty string without error.
+//
+// Parameters:
+//   - token: string representation of JWT token
+//
+// Returns:
+//   - string: extracted user ID
+//   - error: if token parsing fails or token is invalid
 func GetUserID(token string) (string, error) {
 	if token == "" {
 		return "", nil
