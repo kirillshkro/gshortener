@@ -1,3 +1,4 @@
+// Package middleware provides HTTP middleware
 package middleware
 
 import (
@@ -7,6 +8,8 @@ import (
 	"strings"
 )
 
+// HandlerWithGzip is an HTTP middleware that handles gzip compression for both
+// request bodies and response bodies based on the Accept-Encoding and Content-Encoding headers
 func HandlerWithGzip(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		zw := w
@@ -40,14 +43,18 @@ type compWriter struct {
 	zw io.WriteCloser
 }
 
+// Header returns the header map that will be sent by WriteHeader
 func (c *compWriter) Header() http.Header {
 	return c.w.Header()
 }
 
+// Write writes data to the gzip writer
 func (c *compWriter) Write(b []byte) (int, error) {
 	return c.zw.Write(b)
 }
 
+// WriteHeader writes the HTTP response header and sets the Content-Encoding header
+// to "gzip" if the status code is less than 300
 func (c *compWriter) WriteHeader(statusCode int) {
 	if statusCode < 300 {
 		c.w.Header().Set("Content-Encoding", "gzip")
@@ -55,6 +62,7 @@ func (c *compWriter) WriteHeader(statusCode int) {
 	c.w.WriteHeader(statusCode)
 }
 
+// Close closes the gzip writer
 func (c *compWriter) Close() error {
 	return c.zw.Close()
 }
