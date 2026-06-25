@@ -11,10 +11,15 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
+// JSONEncoder interface defines the contract for creating short URLs
 type JSONEncoder interface {
+	// CreateShortURL handles the creation of a short URL from a long URL
 	CreateShortURL(resp http.ResponseWriter, req *http.Request)
 }
 
+// CreateShortURL handles the creation of a short URL from a long URL
+// It expects a JSON request with the original URL in the body
+// Returns HTTP 201 Created on successful creation or HTTP 409 Conflict if URL already exists
 func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	var (
 		data     types.RequestData
