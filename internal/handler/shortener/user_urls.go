@@ -12,7 +12,7 @@ type Getter interface {
 	GetUserURLs(resp http.ResponseWriter, req *http.Request)
 }
 
-// Method for retrieving user URLs.
+// GetUserURLs is method for retrieving user URLs.
 func (s Service) GetUserURLs(resp http.ResponseWriter, req *http.Request) {
 	var (
 		userID string
