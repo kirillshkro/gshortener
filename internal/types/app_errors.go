@@ -1,4 +1,4 @@
-// Package types provides custom error types and their methods.
+// Package types provides custom types and their methods.
 package types
 
 import (
