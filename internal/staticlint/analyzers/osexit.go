@@ -1,3 +1,4 @@
+// Package analyzers provide custom analyzer
 package analyzers
 
 import (
@@ -33,6 +34,7 @@ Examples of allowed code:
         // or return error code using os.Exit in a separate function
     }`
 
+// OsExitAnalyzer custom error analyzer fo os.Exit() statement
 var OsExitAnalyzer = &analysis.Analyzer{
 	Name: "osexitcheck",
 	Doc:  doc,
