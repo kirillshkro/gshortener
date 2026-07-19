@@ -13,9 +13,9 @@ import (
 // Обрабатывает как входящие (распаковка), так и исходящие (упаковка) данные.
 //
 // Принцип работы:
-// 1. Проверяет Accept-Encoding клиента для определения поддержки gzip
-// 2. Если клиент поддерживает gzip, оборачивает ResponseWriter для сжатия ответов
-// 3. Проверяет Content-Encoding запроса и распаковывает тело, если оно сжато
+// 1. Проверяет Content-Encoding запроса и распаковывает тело, если оно сжато
+// 2. Проверяет Accept-Encoding клиента для определения поддержки gzip
+// 3. Если клиент поддерживает gzip и код ответа < 300, оборачивает ResponseWriter для сжатия
 //
 // Особенности:
 //   - Коды ответа < 300 сжимаются, остальные передаются без сжатия
@@ -29,32 +29,29 @@ import (
 //   - http.Handler: обернутый обработчик с поддержкой gzip
 func HandlerWithGzip(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		zw := w
+		encoding := r.Header.Get("Content-Encoding")
+		reqGzip := strings.Contains(encoding, "gzip")
 
-		// Проверяем, поддерживает ли клиент gzip
-		isCompressed := r.Header.Get("Accept-Encoding")
-		isGzipped := strings.Contains(isCompressed, "gzip")
-		if isGzipped {
-			cw := newCompWriter(w)
-			zw = cw
-			defer cw.zw.Close()
-		}
-
-		// Проверяем, сжато ли тело запроса
-		encoding := r.Header.Get("Content-encoding")
-		respGzip := strings.Contains(encoding, "gzip")
-
-		if respGzip {
+		if reqGzip && r.Body != nil {
 			gzr, err := newCompReader(r.Body)
 			if err != nil {
-				http.Error(w, "unkwown server error: "+err.Error(), http.StatusInternalServerError)
+				http.Error(w, "unknown server error: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
-			r.Body = gzr
 			defer gzr.Close()
+			r.Body = gzr
 		}
 
-		// Передаем управление следующему обработчику
+		zw := w
+
+		acceptEncoding := r.Header.Get("Accept-Encoding")
+		respGzip := strings.Contains(acceptEncoding, "gzip")
+		if respGzip {
+			cw := newCompWriter(w)
+			zw = cw
+			defer cw.Close()
+		}
+
 		next.ServeHTTP(zw, r)
 	}
 	return http.HandlerFunc(fn)
