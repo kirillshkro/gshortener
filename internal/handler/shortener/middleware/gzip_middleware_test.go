@@ -105,18 +105,3 @@ func compressToGzip(data []byte) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
-
-func decompressFromGzip(gzData []byte) ([]byte, error) {
-	buf := bytes.NewBuffer(gzData)
-	gzr, err := gzip.NewReader(buf)
-	if err != nil {
-		return nil, err
-	}
-	defer gzr.Close()
-
-	body, err := io.ReadAll(gzr)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
-}
