@@ -152,17 +152,17 @@ func (a *App) setupRouter(service *shortener.Service) *mux.Router {
 	router := mux.NewRouter()
 
 	// Базовые эндпоинты
-	router.Handle("/", middleware.EncodeHandler(service)).Methods(http.MethodPost)
-	router.Handle("/ping", middleware.PingHandler(service)).Methods(http.MethodGet)
-	router.Handle("/{id}", middleware.DecodeHandler(service)).Methods(http.MethodGet)
+	router.HandleFunc("/", service.URLEncode).Methods(http.MethodPost)
+	router.HandleFunc("/ping", service.Ping).Methods(http.MethodGet)
+	router.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet)
 
 	// Эндпоинты для создания коротких ссылок
-	router.Handle("/api/shorten/batch", middleware.BatchCreateURLHandler(service)).Methods(http.MethodPost)
-	router.Handle("/api/shorten", middleware.CreateShortURLHandler(service)).Methods(http.MethodPost)
+	router.HandleFunc("/api/shorten/batch", service.BatchCreateShortURL).Methods(http.MethodPost)
+	router.HandleFunc("/api/shorten", service.CreateShortURL).Methods(http.MethodPost)
 
 	// Эндпоинты для управления ссылками пользователя
-	router.Handle("/api/user/urls", middleware.GetUserURLsHandler(service)).Methods(http.MethodGet)
-	router.Handle("/api/user/urls", middleware.DeleteUserURLsHandler(service)).Methods(http.MethodDelete)
+	router.HandleFunc("/api/user/urls", service.GetUserURLs).Methods(http.MethodGet)
+	router.HandleFunc("/api/user/urls", service.DeleteUserURLs).Methods(http.MethodDelete)
 
 	// Middleware для всех запросов
 	router.Use(middleware.HandlerWithLog)  // Логирование
