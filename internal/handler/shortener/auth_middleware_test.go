@@ -1,7 +1,6 @@
 package shortener
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -139,11 +138,6 @@ func (s *AuthMiddlewareTestSuite) Test_AuthMiddleware_CustomContextValue() {
 		ctxUserID, ok := r.Context().Value(types.UserID).(string)
 		s.Assert().True(ok)
 		s.Assert().Equal(authUser.UserID, ctxUserID)
-
-		customKey := "custom_key"
-		customValue := "custom_value"
-		r = r.WithContext(context.WithValue(r.Context(), customKey, customValue))
-		w.Header().Set("X-Custom", customValue)
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -158,7 +152,6 @@ func (s *AuthMiddlewareTestSuite) Test_AuthMiddleware_CustomContextValue() {
 
 	s.Assert().True(handlerCalled)
 	s.Assert().Equal(http.StatusOK, recorder.Code)
-	s.Assert().Equal("custom_value", recorder.Header().Get("X-Custom"))
 }
 
 func TestAuthMiddleware(t *testing.T) {

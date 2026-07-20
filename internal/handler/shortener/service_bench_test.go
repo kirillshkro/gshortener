@@ -34,8 +34,8 @@ func Benchmark_URLDecode(b *testing.B) {
 	s.SetT(&testing.T{})
 	s.SetupSuite()
 	url := urlgen.GenerateURL("http://basedurl")
-	shortedUrl := Hashing([]byte(url))
-	req := httptest.NewRequest(http.MethodGet, s.server.URL+"/"+string(shortedUrl), nil)
+	shortedURL := Hashing([]byte(url))
+	req := httptest.NewRequest(http.MethodGet, s.server.URL+"/"+string(shortedURL), nil)
 	rr := httptest.NewRecorder()
 	b.ResetTimer()
 	for b.Loop() {
