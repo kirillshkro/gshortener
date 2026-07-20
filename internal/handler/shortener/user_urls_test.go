@@ -40,6 +40,7 @@ func (s *UserURLsTestSuite) Test_GetUserURLs_Successful() {
 	recorder := httptest.NewRecorder()
 	s.service.URLEncode(recorder, req)
 	resp := recorder.Result()
+	defer resp.Body.Close()
 	s.Assert().Equal(http.StatusCreated, resp.StatusCode)
 
 	cookie := resp.Cookies()[0]
@@ -83,6 +84,7 @@ func (s *UserURLsTestSuite) Test_GetUserURLs_MultipleURLs() {
 	recorder1 := httptest.NewRecorder()
 	s.service.URLEncode(recorder1, req1)
 	resp1 := recorder1.Result()
+	defer resp1.Body.Close()
 	s.Assert().Equal(http.StatusCreated, resp1.StatusCode)
 
 	cookie := resp1.Cookies()[0]
@@ -95,6 +97,7 @@ func (s *UserURLsTestSuite) Test_GetUserURLs_MultipleURLs() {
 	recorder2 := httptest.NewRecorder()
 	s.service.URLEncode(recorder2, req2)
 	resp2 := recorder2.Result()
+	defer resp2.Body.Close()
 	s.Assert().Equal(http.StatusCreated, resp2.StatusCode)
 
 	req3 := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)
