@@ -14,8 +14,8 @@ import (
 
 type AuthMiddlewareTestSuite struct {
 	suite.Suite
-	service  *Service
-	authCfg  *auth.AuthConfig
+	service *Service
+	authCfg *auth.AuthConfig
 }
 
 func (s *AuthMiddlewareTestSuite) SetupSuite() {

@@ -17,9 +17,9 @@ import (
 
 type UserURLsTestSuite struct {
 	suite.Suite
-	service  *Service
-	userID   string
-	storage  *storage.MemoryStorage
+	service *Service
+	userID  string
+	storage *storage.MemoryStorage
 }
 
 func (s *UserURLsTestSuite) SetupSuite() {
