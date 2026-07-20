@@ -1,3 +1,5 @@
+// Package urlgen предоставляет функции для генерации случайных коротких URL-адресов.
+// Используется для создания уникальных идентификаторов при сокращении URL.
 package urlgen
 
 import (
@@ -9,7 +11,6 @@ const (
 	shortCodeLength = 6
 )
 
-// generateShortCode generates a random short code of fixed length
 func generateShortCode() string {
 	b := make([]byte, shortCodeLength)
 	for i := range b {
@@ -18,8 +19,19 @@ func generateShortCode() string {
 	return string(b)
 }
 
-// GenerateURL generates a valid random shortened URL
-// baseURL is the base of the shortening service, e.g. "https://short.url"
+// GenerateURL генерирует случайный короткий URL на основе базового адреса.
+// Формирует полный URL путем объединения базового адреса и сгенерированного короткого кода.
+//
+// Пример использования:
+//
+//	url := GenerateURL("https://short.url")
+//	// Результат: "https://short.url/abc123"
+//
+// Параметры:
+//   - baseURL: базовый адрес сервиса сокращения URL (например, "https://short.url")
+//
+// Возвращает:
+//   - string: полный короткий URL в формате baseURL + "/" + shortCode
 func GenerateURL(baseURL string) string {
 	return baseURL + "/" + generateShortCode()
 }

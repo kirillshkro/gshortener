@@ -10,8 +10,9 @@ import (
 )
 
 type MemoryStorage struct {
-	data map[types.ShortURL]types.RawURL
-	mu   sync.Mutex
+	data   map[types.ShortURL]types.RawURL
+	userID map[types.ShortURL]string
+	mu     sync.Mutex
 }
 
 //go:generate mockgen -destination internal/mocks/mock_dbstorage.go -package mocks ./internal/repository/storage IStorage
@@ -34,7 +35,8 @@ type Deleter interface {
 
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
-		data: make(map[types.ShortURL]types.RawURL),
+		data:   make(map[types.ShortURL]types.RawURL),
+		userID: make(map[types.ShortURL]string),
 	}
 }
 
@@ -50,6 +52,7 @@ func (s *MemoryStorage) Create(req model.URLData) error {
 	if key != "" && val != "" {
 		if _, exist := s.data[key]; !exist {
 			s.data[key] = val
+			s.userID[key] = req.UserUUID
 		} else {
 			return &types.ErrUnique{
 				CauseURL: val,
@@ -75,7 +78,19 @@ func (s *MemoryStorage) GetShortURL(key types.RawURL) (types.ShortURL, error) {
 }
 
 func (s *MemoryStorage) GetUserURLs(userUUID string) ([]types.UserURL, error) {
-	return []types.UserURL{}, nil
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var result []types.UserURL
+	for shortURL, originalURL := range s.data {
+		if s.userID[shortURL] == userUUID {
+			result = append(result, types.UserURL{
+				ShortURL:    string(shortURL),
+				OriginalURL: string(originalURL),
+			})
+		}
+	}
+	return result, nil
 }
 
 func (s *MemoryStorage) DeleteUserURL(ctx context.Context, shortURL types.ShortURL) error {

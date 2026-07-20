@@ -55,7 +55,7 @@ func (f *FileStorage) Close() error {
 }
 
 /*
-Возвращает значение по ключу из файла
+OriginalURL возвращает значение по ключу из файла
 */
 func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 	var (
@@ -83,7 +83,7 @@ func (f *FileStorage) OriginalURL(key types.ShortURL) (types.RawURL, error) {
 }
 
 /*
-Добавляет в файл пару ключ-значение
+Create добавляет в файл пару ключ-значение
 */
 func (f *FileStorage) Create(req model.URLData) (err error) {
 	var (

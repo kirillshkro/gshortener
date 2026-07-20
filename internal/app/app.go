@@ -1,3 +1,5 @@
+// Package app предоставляет основную функциональность приложения для сокращения URL.
+// Он объединяет конфигурацию, сервисы, маршрутизацию и управление жизненным циклом HTTP-сервера.
 package app
 
 import (
@@ -21,14 +23,26 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
+// App представляет основную структуру приложения, объединяющую все компоненты.
+// Содержит конфигурацию, сервис сокращения URL, маршрутизатор HTTP,
+// HTTP-сервер и канал для обработки сигналов прерывания.
 type App struct {
-	cfg       *config.Config
-	service   *shortener.Service
-	router    *mux.Router
-	server    *http.Server
-	interrupt chan os.Signal
+	cfg       *config.Config     // Конфигурация приложения
+	service   *shortener.Service // Сервис сокращения URL
+	router    *mux.Router        // Маршрутизатор HTTP-запросов
+	server    *http.Server       // HTTP-сервер
+	interrupt chan os.Signal     // Канал для получения сигналов прерывания
 }
 
+// NewApp создает новый экземпляр приложения с переданной конфигурацией.
+// Инициализирует канал для сигналов прерывания.
+//
+// Параметры:
+//   - cfg: конфигурация приложения
+//
+// Возвращает:
+//   - *App: указатель на созданное приложение
+//   - error: ошибка, если не удалось создать приложение (всегда nil в текущей реализации)
 func NewApp(cfg *config.Config) (*App, error) {
 	app := &App{
 		cfg:       cfg,
@@ -37,6 +51,18 @@ func NewApp(cfg *config.Config) (*App, error) {
 	return app, nil
 }
 
+// setupService инициализирует сервис сокращения URL с соответствующим хранилищем
+// и системами аудита на основе конфигурации приложения.
+//
+// Процесс настройки:
+// 1. Создание JSON-логгера
+// 2. Создание сервиса с базовыми URL-адресами
+// 3. Последовательный выбор хранилища: память -> файл -> БД
+// 4. Настройка системы аудита (файловый и сетевой)
+//
+// Возвращает:
+//   - *shortener.Service: настроенный сервис сокращения URL
+//   - error: ошибка, если не удалось создать сервис
 func (a *App) setupService() (*shortener.Service, error) {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	var (
@@ -44,13 +70,17 @@ func (a *App) setupService() (*shortener.Service, error) {
 		err     error
 		subject audit.Subject
 	)
+
+	// Создание базового сервиса с начальными URL-адресами
 	service := shortener.NewServiceWithAddrWithAddrShortener(types.RawURL(a.cfg.Address), types.ShortURL(a.cfg.ShortedURL))
 
+	// Проверка доступности внешних хранилищ, использование in-memory как запасной вариант
 	if a.cfg.DSN == "" && a.cfg.FileDB == "" {
 		service.Stor = storage.NewMemoryStorage()
 		logger.Info("All external storages are unavailable. Using in-memory storage (will not be saved after restart)")
 	}
 
+	// Настройка файлового хранилища
 	if a.cfg.FileDB != "" {
 		if stor, err = storage.GetFileStorage(a.cfg.FileDB); err != nil {
 			logger.Warn("Failed to use file storage, switching to the next option", "error", err)
@@ -62,6 +92,7 @@ func (a *App) setupService() (*shortener.Service, error) {
 		}
 	}
 
+	// Настройка хранилища базы данных (имеет приоритет над файловым)
 	if a.cfg.DSN != "" {
 		logger.Info("Try connect to database", "dsn", a.cfg.DSN)
 		if stor, err = storage.GetDBStorage(a.cfg.DSN); err != nil {
@@ -72,8 +103,10 @@ func (a *App) setupService() (*shortener.Service, error) {
 		}
 	}
 
+	// Настройка системы аудита (наблюдатели)
 	service.SetSubject(&subject)
 
+	// Добавление файлового аудита
 	if a.cfg.AuditFile != "" {
 		fileAudit, err := audit.GetAuditService(a.cfg.AuditFile)
 		if err != nil {
@@ -82,6 +115,7 @@ func (a *App) setupService() (*shortener.Service, error) {
 		subject.Register(fileAudit)
 	}
 
+	// Добавление сетевого аудита
 	if a.cfg.AuditURL != "" {
 		urlAudit, err := audit.GetNetAuditService(a.cfg.AuditURL)
 		if err != nil {
@@ -93,30 +127,62 @@ func (a *App) setupService() (*shortener.Service, error) {
 	return service, nil
 }
 
+// setupRouter настраивает маршрутизатор HTTP с обработчиками для всех эндпоинтов.
+//
+// Регистрирует следующие эндпоинты:
+//   - POST / - сокращение URL
+//   - GET /ping - проверка доступности сервиса
+//   - GET /{id} - получение оригинального URL по короткому идентификатору
+//   - POST /api/shorten - создание короткой ссылки (JSON)
+//   - POST /api/shorten/batch - пакетное создание коротких ссылок
+//   - GET /api/user/urls - получение всех ссылок пользователя
+//   - DELETE /api/user/urls - удаление ссылок пользователя
+//
+// Добавляет middleware:
+//   - Логирование запросов
+//   - Аутентификация пользователей
+//   - Сжатие трафика
+//
+// Параметры:
+//   - service: сервис сокращения URL
+//
+// Возвращает:
+//   - *mux.Router: настроенный маршрутизатор
 func (a *App) setupRouter(service *shortener.Service) *mux.Router {
 	router := mux.NewRouter()
-	router.Handle("/", middleware.EncodeHandler(service)).Methods(http.MethodPost)
-	router.Handle("/ping", middleware.PingHandler(service)).Methods(http.MethodGet)
-	router.Handle("/{id}", middleware.DecodeHandler(service)).Methods(http.MethodGet)
 
-	//Добавляем хандлеры с созданием коротких ссылок
-	router.Handle("/api/shorten/batch", middleware.BatchCreateURLHandler(service)).Methods(http.MethodPost)
-	router.Handle("/api/shorten", middleware.CreateShortURLHandler(service)).Methods(http.MethodPost)
+	// Базовые эндпоинты
+	router.HandleFunc("/", service.URLEncode).Methods(http.MethodPost)
+	router.HandleFunc("/ping", service.Ping).Methods(http.MethodGet)
+	router.HandleFunc("/{id}", service.URLDecode).Methods(http.MethodGet)
 
-	//Добавляем хандлеры с получением информации о короткой ссылке
-	router.Handle("/api/user/urls", middleware.GetUserURLsHandler(service)).Methods(http.MethodGet)
-	router.Handle("/api/user/urls", middleware.DeleteUserURLsHandler(service)).Methods(http.MethodDelete)
+	// Эндпоинты для создания коротких ссылок
+	router.HandleFunc("/api/shorten/batch", service.BatchCreateShortURL).Methods(http.MethodPost)
+	router.HandleFunc("/api/shorten", service.CreateShortURL).Methods(http.MethodPost)
 
-	//Добавляем middleware с логгированием
-	router.Use(middleware.HandlerWithLog)
-	router.Use(service.AuthMiddleware)
+	// Эндпоинты для управления ссылками пользователя
+	router.HandleFunc("/api/user/urls", service.GetUserURLs).Methods(http.MethodGet)
+	router.HandleFunc("/api/user/urls", service.DeleteUserURLs).Methods(http.MethodDelete)
 
-	//Добавляем middleware с сжатием траффика
-	router.Use(middleware.HandlerWithGzip)
+	// Middleware для всех запросов
+	router.Use(middleware.HandlerWithLog)  // Логирование
+	router.Use(service.AuthMiddleware)     // Аутентификация
+	router.Use(middleware.HandlerWithGzip) // Сжатие
 
 	return router
 }
 
+// parseFlags разбирает аргументы командной строки и настраивает приложение.
+//
+// Поддерживаемые флаги:
+//   - -a: адрес сервиса (по умолчанию из конфигурации)
+//   - -b: базовый URL для коротких ссылок (по умолчанию из конфигурации)
+//   - -f: путь к файлу БД (по умолчанию из конфигурации)
+//   - -d: строка подключения к БД (по умолчанию из конфигурации)
+//   - -audit-url: URL сервиса аудита (по умолчанию из конфигурации)
+//   - -audit-file: путь к файлу аудита (по умолчанию из конфигурации)
+//
+// После разбора флагов инициализирует сервис и маршрутизатор.
 func (a *App) parseFlags() {
 	flag.StringVar(&a.cfg.Address, "a", a.cfg.Address, "Set base host address service")
 	flag.StringVar(&a.cfg.ShortedURL, "b", a.cfg.ShortedURL, "Set base shorted url")
@@ -135,33 +201,58 @@ func (a *App) parseFlags() {
 	a.router = a.setupRouter(a.service)
 }
 
+// runServer запускает HTTP-сервер в отдельной горутине.
+// При возникновении ошибки выполнения сервера (кроме планового завершения)
+// логирует фатальную ошибку.
+//
+// Возвращает:
+//   - error: ошибка, если не удалось запустить сервер
 func (a *App) runServer() error {
 	server := &http.Server{
 		Addr:    a.cfg.Address,
 		Handler: a.router,
 	}
+
 	go func() {
 		log.Printf("server is listening on %s\n", a.cfg.Address)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("error listen server is %s\n", err.Error())
 		}
 	}()
+
 	a.server = server
 	return nil
 }
 
+// gracefulShutdown ожидает сигналы завершения и выполняет корректное завершение сервера.
+//
+// Ожидает сигналы SIGTERM и SIGINT.
+// При получении сигнала создает контекст с таймаутом в 30 секунд
+// для корректного завершения всех активных соединений.
+// При ошибке завершения логирует фатальную ошибку.
 func (a *App) gracefulShutdown() {
 	signal.Notify(a.interrupt, syscall.SIGTERM, syscall.SIGINT)
 	<-a.interrupt
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+
 	if err := a.server.Shutdown(ctx); err != nil {
 		log.Fatalf("Failed to shutdown server: %v", err)
 		log.Fatalf("Server stopped")
 	}
+
 	log.Println("Shutting down server...")
 }
 
+// Run запускает основную логику приложения:
+// 1. Разбор флагов командной строки
+// 2. Запуск HTTP-сервера
+// 3. Ожидание сигналов завершения
+// 4. Корректное завершение работы
+//
+// Возвращает:
+//   - error: ошибка, если не удалось запустить сервер
 func (a *App) Run() error {
 	a.parseFlags()
 	err := a.runServer()

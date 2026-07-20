@@ -9,7 +9,13 @@ import (
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
+// Deleter interface defines the contract for deleting user URLs.
 type Deleter interface {
+	// DeleteUserURLs handles the deletion of user-specific short URLs.
+	//
+	// Parameters:
+	//   - resp: The HTTP response writer to send the response back to the client.
+	//   - req: The HTTP request containing the user's URLs to delete.
 	DeleteUserURLs(resp http.ResponseWriter, req *http.Request)
 }
 
