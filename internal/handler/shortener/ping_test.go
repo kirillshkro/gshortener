@@ -21,7 +21,7 @@ func (s *PingTestSuite) SetupTest() {
 	var err error
 	// Настройка конфигурации с базой данных
 	cfg := config.GetConfig()
-	cfg.DSN = "postgres://postgres@localhost:5432?sslmode=disable"
+	cfg.DSN = "postgres://postgres@localhost:5432/market?sslmode=disable"
 
 	// Создание тестовой базы данных
 	s.db, err = sql.Open("postgres", cfg.DSN)
