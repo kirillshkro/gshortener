@@ -152,8 +152,8 @@ func hasGenerateResetComment(comments *ast.CommentGroup) bool {
 func generateResetMethod(structName string) string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("// Reset%s сбрасывает все поля структуры %s к значениям по умолчанию\n", structName, structName))
-	sb.WriteString(fmt.Sprintf("func (s *%s) Reset%s() {\n", structName, structName))
+	fmt.Fprintf(&sb, "// Reset%s сбрасывает все поля структуры %s к значениям по умолчанию\n", structName, structName)
+	fmt.Fprintf(&sb, "func (s *%s) Reset%s() {\n", structName, structName)
 	sb.WriteString("}\n\n")
 
 	return sb.String()
