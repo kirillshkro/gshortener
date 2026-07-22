@@ -148,13 +148,6 @@ type (
 	goModContent := `module testmod
 
 go 1.21
-
-require golang.org/x/tools v0.48.0
-
-require (
-	github.com/google/go-cmp v0.7.0
-	github.com/stretchr/testify v1.11.1
-)
 `
 	if err := os.WriteFile(goModFile, []byte(goModContent), 0644); err != nil {
 		t.Fatal(err)
@@ -165,9 +158,9 @@ require (
 		t.Fatalf("unexpected error: %v", err)
 	}
 	
-	resetFile := filepath.Join(pkgDir, "reset.gen.go")
+	resetFile := filepath.Join(pkgDir, "reset.go")
 	if _, err := os.Stat(resetFile); os.IsNotExist(err) {
-		t.Error("expected reset.gen.go to be created")
+		t.Error("expected reset.go to be created")
 	}
 	
 	contentBytes, err := os.ReadFile(resetFile)
@@ -177,7 +170,7 @@ require (
 	
 	contentStr := string(contentBytes)
 	if !strings.Contains(contentStr, "func (s *User) ResetUser()") {
-		t.Errorf("expected to find ResetUser method in reset.gen.go, got: %s", contentStr)
+		t.Errorf("expected to find ResetUser method in reset.go, got: %s", contentStr)
 	}
 }
 
@@ -194,9 +187,9 @@ func TestWriteResetFile(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	
-	resetFile := filepath.Join(tempDir, "reset.gen.go")
+	resetFile := filepath.Join(tempDir, "reset.go")
 	if _, err := os.Stat(resetFile); os.IsNotExist(err) {
-		t.Error("expected reset.gen.go to be created")
+		t.Error("expected reset.go to be created")
 	}
 	
 	contentBytes, err := os.ReadFile(resetFile)
@@ -206,10 +199,10 @@ func TestWriteResetFile(t *testing.T) {
 	
 	contentStr := string(contentBytes)
 	if !strings.Contains(contentStr, "func (s *User) ResetUser()") {
-		t.Errorf("expected to find User method in reset.gen.go, got: %s", contentStr)
+		t.Errorf("expected to find User method in reset.go, got: %s", contentStr)
 	}
 	
 	if !strings.Contains(contentStr, "func (s *Config) ResetConfig()") {
-		t.Errorf("expected to find Config method in reset.gen.go, got: %s", contentStr)
+		t.Errorf("expected to find Config method in reset.go, got: %s", contentStr)
 	}
 }

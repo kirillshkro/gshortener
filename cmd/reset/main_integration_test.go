@@ -49,9 +49,9 @@ go 1.21
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	resetFile := filepath.Join(pkgDir, "reset.gen.go")
+	resetFile := filepath.Join(pkgDir, "reset.go")
 	if _, err := os.Stat(resetFile); os.IsNotExist(err) {
-		t.Error("expected reset.gen.go to be created")
+		t.Error("expected reset.go to be created")
 	}
 
 	contentBytes, err := os.ReadFile(resetFile)
@@ -61,14 +61,14 @@ go 1.21
 
 	contentStr := string(contentBytes)
 	if !strings.Contains(contentStr, "func (s *User) ResetUser()") {
-		t.Errorf("expected to find ResetUser method in reset.gen.go, got: %s", contentStr)
+		t.Errorf("expected to find ResetUser method in reset.go, got: %s", contentStr)
 	}
 
 	if !strings.Contains(contentStr, "func (s *Config) ResetConfig()") {
-		t.Errorf("expected to find ResetConfig method in reset.gen.go, got: %s", contentStr)
+		t.Errorf("expected to find ResetConfig method in reset.go, got: %s", contentStr)
 	}
 
 	if !strings.Contains(contentStr, "package testpkg") {
-		t.Errorf("expected package declaration in reset.gen.go, got: %s", contentStr)
+		t.Errorf("expected package declaration in reset.go, got: %s", contentStr)
 	}
 }
