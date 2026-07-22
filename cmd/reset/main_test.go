@@ -1,4 +1,4 @@
-package main
+package reset
 
 import (
 	"os"
@@ -11,19 +11,19 @@ import (
 
 func TestGenerateResetMethod(t *testing.T) {
 	tests := []struct {
-		name     string
+		name       string
 		structName string
-		expected string
+		expected   string
 	}{
 		{
-			name:        "simple struct name",
-			structName:  "User",
-			expected:    "func (s *User) ResetUser()",
+			name:       "simple struct name",
+			structName: "User",
+			expected:   "func (s *User) ResetUser()",
 		},
 		{
-			name:        "struct with capital letter",
-			structName:  "Config",
-			expected:    "func (s *Config) ResetConfig()",
+			name:       "struct with capital letter",
+			structName: "Config",
+			expected:   "func (s *Config) ResetConfig()",
 		},
 	}
 
@@ -77,12 +77,12 @@ func TestHasGenerateResetComment(t *testing.T) {
 
 func TestFindPackages(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	pkgDir := filepath.Join(tempDir, "testpkg")
 	if err := os.MkdirAll(pkgDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	testFile := filepath.Join(pkgDir, "test.go")
 	content := `package testpkg
 
@@ -93,7 +93,7 @@ type TestStruct struct {
 	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	goModFile := filepath.Join(tempDir, "go.mod")
 	goModContent := `module testmod
 
@@ -102,12 +102,12 @@ go 1.21
 	if err := os.WriteFile(goModFile, []byte(goModContent), 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	pkgs, err := findPackages(tempDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	
+
 	found := false
 	for _, pkg := range pkgs {
 		if strings.Contains(pkg, "testpkg") {
@@ -115,7 +115,7 @@ go 1.21
 			break
 		}
 	}
-	
+
 	if !found {
 		t.Errorf("expected to find testpkg, got %v", pkgs)
 	}
@@ -123,12 +123,12 @@ go 1.21
 
 func TestProcessPackage(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	pkgDir := filepath.Join(tempDir, "testpkg")
 	if err := os.MkdirAll(pkgDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	testFile := filepath.Join(pkgDir, "test.go")
 	content := `package testpkg
 
@@ -143,7 +143,7 @@ type (
 	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	goModFile := filepath.Join(pkgDir, "go.mod")
 	goModContent := `module testmod
 
@@ -152,22 +152,22 @@ go 1.21
 	if err := os.WriteFile(goModFile, []byte(goModContent), 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	err := processPackage(pkgDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	
+
 	resetFile := filepath.Join(pkgDir, "reset.go")
 	if _, err := os.Stat(resetFile); os.IsNotExist(err) {
 		t.Error("expected reset.go to be created")
 	}
-	
+
 	contentBytes, err := os.ReadFile(resetFile)
 	if err != nil {
 		t.Fatalf("unexpected error reading file: %v", err)
 	}
-	
+
 	contentStr := string(contentBytes)
 	if !strings.Contains(contentStr, "func (s *User) ResetUser()") {
 		t.Errorf("expected to find ResetUser method in reset.go, got: %s", contentStr)
@@ -176,32 +176,32 @@ go 1.21
 
 func TestWriteResetFile(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	methods := []string{
 		"func (s *User) ResetUser() {}\n\n",
 		"func (s *Config) ResetConfig() {}\n\n",
 	}
-	
+
 	err := writeResetFile(tempDir, methods)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	
+
 	resetFile := filepath.Join(tempDir, "reset.go")
 	if _, err := os.Stat(resetFile); os.IsNotExist(err) {
 		t.Error("expected reset.go to be created")
 	}
-	
+
 	contentBytes, err := os.ReadFile(resetFile)
 	if err != nil {
 		t.Fatalf("unexpected error reading file: %v", err)
 	}
-	
+
 	contentStr := string(contentBytes)
 	if !strings.Contains(contentStr, "func (s *User) ResetUser()") {
 		t.Errorf("expected to find User method in reset.go, got: %s", contentStr)
 	}
-	
+
 	if !strings.Contains(contentStr, "func (s *Config) ResetConfig()") {
 		t.Errorf("expected to find Config method in reset.go, got: %s", contentStr)
 	}
