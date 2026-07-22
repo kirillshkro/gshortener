@@ -29,7 +29,7 @@ func TestGenerateResetMethod(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := generateResetMethod(tt.structName)
+			result := generateResetMethod(tt.structName, nil)
 			if !strings.Contains(result, tt.expected) {
 				t.Errorf("expected to contain %q, got %q", tt.expected, result)
 			}
