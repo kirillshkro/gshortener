@@ -124,3 +124,35 @@ func writeResetFile(pkgPath string, methods []string) error {
 
 	return os.WriteFile(resetFilePath, []byte(content), 0644)
 }
+
+// Resetable интерфейс для типов, имеющих метод Reset()
+type Resetable interface {
+	Reset()
+}
+
+// Pool пул объектов с методом Reset()
+type Pool[T Resetable] struct {
+	pool []T
+}
+
+// New создает и возвращает указатель на структуру Pool
+func New[T Resetable]() *Pool[T] {
+	return &Pool[T]{}
+}
+
+// Get возвращает объект из пула
+func (p *Pool[T]) Get() T {
+	if len(p.pool) == 0 {
+		var zero T
+		return zero
+	}
+	obj := p.pool[len(p.pool)-1]
+	p.pool = p.pool[:len(p.pool)-1]
+	return obj
+}
+
+// Put помещает объект в пул
+func (p *Pool[T]) Put(obj T) {
+	obj.Reset()
+	p.pool = append(p.pool, obj)
+}
