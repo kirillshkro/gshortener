@@ -190,6 +190,7 @@ func (a *App) parseFlags() {
 	flag.StringVar(&a.cfg.DSN, "d", a.cfg.DSN, "Set database connection string")
 	flag.StringVar(&a.cfg.AuditURL, "audit-url", a.cfg.AuditURL, "Set audit service url")
 	flag.StringVar(&a.cfg.AuditFile, "audit-file", a.cfg.AuditFile, "Set audit file path")
+	flag.BoolVar(&a.cfg.EnableHTTPS, "s", a.cfg.EnableHTTPS, "Set HTTPS mode")
 	flag.Parse()
 
 	var err error
@@ -215,8 +216,14 @@ func (a *App) runServer() error {
 
 	go func() {
 		log.Printf("server is listening on %s\n", a.cfg.Address)
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("error listen server is %s\n", err.Error())
+		if !a.cfg.EnableHTTPS {
+			if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Fatalf("error listen server is %s\n", err.Error())
+			}
+		} else {
+			if err := server.ListenAndServeTLS(a.cfg.CertFile, a.cfg.KeyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Fatalf("error listen server is %s\n", err.Error())
+			}
 		}
 	}()
 
