@@ -23,7 +23,6 @@ func (s Service) AuthMiddleware(next http.Handler) http.Handler {
 		userID, err := claims.GetUserID(token)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			next.ServeHTTP(w, r)
 			return
 		}
 		// Если токен валиден, продолжаем

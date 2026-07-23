@@ -11,22 +11,27 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/kirillshkro/gshortener/internal/config"
 	"github.com/kirillshkro/gshortener/internal/config/auth"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener/claims"
+	"github.com/kirillshkro/gshortener/internal/model"
 	"github.com/kirillshkro/gshortener/internal/repository/storage"
+	"github.com/kirillshkro/gshortener/internal/service/audit"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/kirillshkro/gshortener/internal/types/model"
 )
 
+// Service struct represents the main service for URL shortening.
 type Service struct {
 	ServAddr   types.RawURL
 	ResultAddr types.ShortURL
 	Stor       storage.IStorage
 	logger     *slog.Logger
+	subject    *audit.Subject
 }
 
+// IService interface defines the contract for all operations related to URL handling.
 type IService interface {
 	URLEncoder
 	URLDecoder
@@ -35,19 +40,22 @@ type IService interface {
 	Deleter
 }
 
+// URLEncoder interface defines methods for encoding URLs.
 type URLEncoder interface {
 	URLEncode(resp http.ResponseWriter, req *http.Request)
 }
 
+// URLDecoder interface defines methods for decoding URLs.
 type URLDecoder interface {
 	URLDecode(resp http.ResponseWriter, req *http.Request)
 }
 
+// BatchCreator interface defines methods for batch creation of short URLs.
 type BatchCreator interface {
 	BatchCreateShortURL(resp http.ResponseWriter, req *http.Request)
 }
 
-// Создает сервис со значениями по умолчанию
+// NewService creates a new Service instance with default values.
 func NewService() *Service {
 	cfg := config.GetConfig()
 	stor, err := storage.GetFileStorage(cfg.FileDB)
@@ -59,10 +67,11 @@ func NewService() *Service {
 		ResultAddr: types.ShortURL("localhost:8080"),
 		Stor:       stor,
 		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
+		subject:    audit.NewSubject(),
 	}
 }
 
-// Создает сервис с заданным IP-адресом и портом
+// NewServiceWithAddr creates a new Service instance with the specified address.
 func NewServiceWithAddr(addr types.RawURL) *Service {
 	cfg := config.GetConfig()
 	stor, err := storage.GetFileStorage(cfg.FileDB)
@@ -74,10 +83,11 @@ func NewServiceWithAddr(addr types.RawURL) *Service {
 		ResultAddr: types.ShortURL("localhost:8080"),
 		Stor:       stor,
 		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
+		subject:    audit.NewSubject(),
 	}
 }
 
-// Создает сервис с заданными IP-адресом и портом, и URL сокращенных ссылок
+// NewServiceWithAddrWithAddrShortener creates a new Service instance with the specified addresses.
 func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.ShortURL) *Service {
 	cfg := config.GetConfig()
 	stor, err := storage.GetFileStorage(cfg.FileDB)
@@ -89,10 +99,11 @@ func NewServiceWithAddrWithAddrShortener(addr types.RawURL, shortAddr types.Shor
 		ResultAddr: shortAddr,
 		Stor:       stor,
 		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
+		subject:    audit.NewSubject(),
 	}
 }
 
-// Принимает на вход URL, возвращает базовый URL сервиса + хэш исходного URL
+// URLEncode handles the encoding of URLs.
 func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
@@ -176,10 +187,17 @@ func (s Service) URLEncode(resp http.ResponseWriter, req *http.Request) {
 	if _, err = resp.Write([]byte(outOriginalURL)); err != nil {
 		s.logger.Error("don't send response because by " + err.Error())
 	}
+
+	event := &types.Event{
+		TimestampEvent: time.Now().UnixNano(),
+		Action:         types.ActionCreate,
+		UserID:         userUUID,
+		URL:            string(bodyReq),
+	}
+	s.subject.Notify(event)
 }
 
-// Принимает на вход сокращенный URL,
-// возвращает полный URL
+// URLDecode handles the decoding of URLs.
 func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		resp.WriteHeader(http.StatusBadRequest)
@@ -205,8 +223,16 @@ func (s Service) URLDecode(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Location", string(location))
 	resp.WriteHeader(http.StatusTemporaryRedirect)
 
+	event := &types.Event{
+		TimestampEvent: time.Now().UnixNano(),
+		Action:         types.ActionFollow,
+		UserID:         "",
+		URL:            string(location),
+	}
+	s.subject.Notify(event)
 }
 
+// BatchCreateShortURL handles the batch creation of short URLs.
 func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		resp.WriteHeader(http.StatusBadRequest)
@@ -231,7 +257,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	}
 	for _, item = range bodyReq {
 		hashURL := Hashing([]byte(item.OriginalURL))
-		//сохраняем в хранилище
+		// сохраняем в хранилище
 		if err = s.Stor.Create(model.URLData{
 			ShortURL:    hashURL,
 			OriginalURL: item.OriginalURL,
@@ -246,7 +272,7 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 		answer = append(answer, out)
 	}
 
-	//устанавливаем тип ответа
+	// устанавливаем тип ответа
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusCreated)
 	if err = json.NewEncoder(resp).Encode(answer); err != nil {
@@ -255,6 +281,14 @@ func (s Service) BatchCreateShortURL(resp http.ResponseWriter, req *http.Request
 	}
 }
 
+// SetSubject sets the audit subject for the service.
+func (s *Service) SetSubject(subj *audit.Subject) {
+	if subj != nil {
+		s.subject = subj
+	}
+}
+
+// Hashing generates a short URL hash from the given data.
 func Hashing(data []byte) types.ShortURL {
 	hashed := sha1.Sum(data)
 	shorthed := hashed[:6]

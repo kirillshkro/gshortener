@@ -5,9 +5,10 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/kirillshkro/gshortener/internal/model"
 	"github.com/kirillshkro/gshortener/internal/types"
-	"github.com/kirillshkro/gshortener/internal/types/model"
 )
 
 type JSONEncoder interface {
@@ -58,4 +59,12 @@ func (s Service) CreateShortURL(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	event := &types.Event{
+		TimestampEvent: time.Now().UnixNano(),
+		Action:         types.ActionCreate,
+		UserID:         "",
+		URL:            string(data.URL),
+	}
+	s.subject.Notify(event)
 }

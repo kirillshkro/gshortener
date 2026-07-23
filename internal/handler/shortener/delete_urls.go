@@ -6,38 +6,27 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kirillshkro/gshortener/internal/handler/shortener/claims"
 	"github.com/kirillshkro/gshortener/internal/types"
 )
 
+// Deleter interface defines the contract for deleting user URLs.
 type Deleter interface {
+	// DeleteUserURLs handles the deletion of user-specific short URLs.
+	//
+	// Parameters:
+	//   - resp: The HTTP response writer to send the response back to the client.
+	//   - req: The HTTP request containing the user's URLs to delete.
 	DeleteUserURLs(resp http.ResponseWriter, req *http.Request)
 }
 
 func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
-
-	if !cookieExist(req, "auth_cookie") {
+	var (
+		userID string
+		ok     bool
+	)
+	userID, ok = req.Context().Value(types.UserID).(string)
+	if !ok {
 		resp.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	userCookie, err := req.Cookie("auth_cookie")
-	if err != nil {
-		s.logger.Error("failed to get auth cookie", "error", err)
-		resp.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	userToken := userCookie.Value
-	if userToken == "" {
-		s.logger.Error("user ID not found")
-		resp.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	userID, err := claims.GetUserID(userToken)
-	if err != nil {
-		s.logger.Error("failed to get user ID", "error", err)
-		resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -45,9 +34,7 @@ func (s Service) DeleteUserURLs(resp http.ResponseWriter, req *http.Request) {
 		urls []types.ShortURL
 	)
 
-	const userIDKey types.UserIDKey = "user_id"
-
-	ctx := context.WithValue(context.Background(), userIDKey, userID)
+	ctx := context.WithValue(context.Background(), types.UserID, userID)
 
 	if err := json.NewDecoder(req.Body).Decode(&urls); err != nil {
 		s.logger.Error("failed to decode request body", "error", err)
