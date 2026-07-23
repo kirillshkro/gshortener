@@ -37,6 +37,12 @@ type Config struct {
 	AuditFile string `env:"AUDIT_FILE"`
 	// AuditURL is the URL to which audit logs should be sent.
 	AuditURL string `env:"AUDIT_URL"`
+	//EnableHTTPS is flag to enable HTTPS.
+	EnableHTTPS bool `env:"ENABLE_HTTPS" env-default:"false"`
+	//CertFile is the path to the SSL certificate file.
+	CertFile string `env:"CERT_FILE"`
+	//KeyFile is the path to the SSL key file
+	KeyFile string `env:"KEY_FILE"`
 }
 
 func newConfig() *Config {
@@ -45,11 +51,14 @@ func newConfig() *Config {
 		panic(err)
 	}
 	return &Config{
-		Address:    cfg.Address,
-		ShortedURL: cfg.ShortedURL,
-		FileDB:     cfg.FileDB,
-		DSN:        cfg.DSN,
-		AuditFile:  cfg.AuditFile,
-		AuditURL:   cfg.AuditURL,
+		Address:     cfg.Address,
+		ShortedURL:  cfg.ShortedURL,
+		FileDB:      cfg.FileDB,
+		DSN:         cfg.DSN,
+		AuditFile:   cfg.AuditFile,
+		AuditURL:    cfg.AuditURL,
+		EnableHTTPS: cfg.EnableHTTPS,
+		CertFile:    cfg.CertFile,
+		KeyFile:     cfg.KeyFile,
 	}
 }
