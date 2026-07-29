@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -32,21 +33,23 @@ type App struct {
 	router    *mux.Router        // Маршрутизатор HTTP-запросов
 	server    *http.Server       // HTTP-сервер
 	interrupt chan os.Signal     // Канал для получения сигналов прерывания
+	mu        sync.Mutex         // Синхронизатор для безопасного обновления конфигурации
 }
 
 // NewApp создает новый экземпляр приложения с переданной конфигурацией.
-// Инициализирует канал для сигналов прерывания.
+// Инициализирует канал для сигналов прерывания и сохраняет конфигурацию в файл.
 //
 // Параметры:
 //   - cfg: конфигурация приложения
 //
 // Возвращает:
 //   - *App: указатель на созданное приложение
-//   - error: ошибка, если не удалось создать приложение (всегда nil в текущей реализации)
+//   - error: ошибка, если не удалось создать приложение
 func NewApp(cfg *config.Config) (*App, error) {
 	app := &App{
 		cfg:       cfg,
 		interrupt: make(chan os.Signal, 1),
+		mu:        sync.Mutex{},
 	}
 	return app, nil
 }
@@ -100,6 +103,13 @@ func (a *App) setupService() (*shortener.Service, error) {
 		} else {
 			logger.Info("Using database storage")
 			service.Stor = stor
+		}
+	}
+
+	// Load config from JSON file if specified via flag
+	if a.cfg.ConfigFile != "" {
+		if err := a.cfg.ReadFromJSON(a.cfg.ConfigFile); err != nil {
+			log.Fatalf("Failed to read config file %q: %v", a.cfg.ConfigFile, err)
 		}
 	}
 
@@ -181,6 +191,7 @@ func (a *App) setupRouter(service *shortener.Service) *mux.Router {
 //   - -d: строка подключения к БД (по умолчанию из конфигурации)
 //   - -audit-url: URL сервиса аудита (по умолчанию из конфигурации)
 //   - -audit-file: путь к файлу аудита (по умолчанию из конфигурации)
+//   - -c: путь к файлу конфигурации JSON
 //
 // После разбора флагов инициализирует сервис и маршрутизатор.
 func (a *App) parseFlags() {
@@ -191,6 +202,7 @@ func (a *App) parseFlags() {
 	flag.StringVar(&a.cfg.AuditURL, "audit-url", a.cfg.AuditURL, "Set audit service url")
 	flag.StringVar(&a.cfg.AuditFile, "audit-file", a.cfg.AuditFile, "Set audit file path")
 	flag.BoolVar(&a.cfg.EnableHTTPS, "s", a.cfg.EnableHTTPS, "Set HTTPS mode")
+	flag.StringVar(&a.cfg.ConfigFile, "c", a.cfg.ConfigFile, "Set path to JSON configuration file")
 	flag.Parse()
 
 	var err error
