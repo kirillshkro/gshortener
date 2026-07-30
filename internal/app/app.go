@@ -250,7 +250,7 @@ func (a *App) runServer() error {
 // для корректного завершения всех активных соединений.
 // При ошибке завершения логирует фатальную ошибку.
 func (a *App) gracefulShutdown() {
-	signal.Notify(a.interrupt, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(a.interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	<-a.interrupt
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
