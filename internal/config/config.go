@@ -11,10 +11,6 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-const (
-	configFileEnv = "CONFIG"
-)
-
 var (
 	instance *Config
 	once     sync.Once
@@ -54,20 +50,6 @@ type Config struct {
 	ConfigFile string `env:"CONFIG" json:"config_file"`
 }
 
-// JSONConfig is a plain struct used for JSON serialization/deserialization.
-// All fields are unexported to distinguish it from Config (which has env tags).
-type JSONConfig struct {
-	Address     string `json:"address"`
-	ShortURL    string `json:"short_url"`
-	FileDBPath  string `json:"file_db_path"`
-	DatabaseDSN string `json:"database_dsn"`
-	AuditFile   string `json:"audit_file"`
-	AuditURL    string `json:"audit_url"`
-	EnableHTTPS bool   `json:"enable_https"`
-	CertFile    string `json:"cert_file"`
-	KeyFile     string `json:"key_file"`
-}
-
 // newConfig reads configuration from environment variables and, if a config file
 // path is provided via CONFIG env, merges values from that JSON file.
 func newConfig() *Config {
@@ -94,40 +76,12 @@ func (c *Config) ReadFromJSON(filePath string) error {
 		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	var jc JSONConfig
-	if err := json.Unmarshal(data, &jc); err != nil {
+	var tmpConfig Config
+	if err := json.Unmarshal(data, &tmpConfig); err != nil {
 		return fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	// Merge JSON values into Config (JSON has higher priority than env)
-	if jc.Address != "" {
-		c.Address = jc.Address
-	}
-	if jc.ShortURL != "" {
-		c.ShortedURL = jc.ShortURL
-	}
-	if jc.FileDBPath != "" {
-		c.FileDB = jc.FileDBPath
-	}
-	if jc.DatabaseDSN != "" {
-		c.DSN = jc.DatabaseDSN
-	}
-	if jc.AuditFile != "" {
-		c.AuditFile = jc.AuditFile
-	}
-	if jc.AuditURL != "" {
-		c.AuditURL = jc.AuditURL
-	}
-	if jc.EnableHTTPS {
-		c.EnableHTTPS = jc.EnableHTTPS
-	}
-	if jc.CertFile != "" {
-		c.CertFile = jc.CertFile
-	}
-	if jc.KeyFile != "" {
-		c.KeyFile = jc.KeyFile
-	}
-
+	c = &tmpConfig
 	return nil
 }
 
@@ -137,17 +91,7 @@ func (c *Config) Save() error {
 		return fmt.Errorf("config file path is not set")
 	}
 
-	data, err := json.MarshalIndent(JSONConfig{
-		Address:     c.Address,
-		ShortURL:    c.ShortedURL,
-		FileDBPath:  c.FileDB,
-		DatabaseDSN: c.DSN,
-		AuditFile:   c.AuditFile,
-		AuditURL:    c.AuditURL,
-		EnableHTTPS: c.EnableHTTPS,
-		CertFile:    c.CertFile,
-		KeyFile:     c.KeyFile,
-	}, "", "  ")
+	data, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
