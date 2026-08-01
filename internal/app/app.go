@@ -8,6 +8,7 @@ import (
 	"flag"
 	"log"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,23 +18,27 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kirillshkro/gshortener/internal/config"
+	grpcserver "github.com/kirillshkro/gshortener/internal/grpc"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener"
 	"github.com/kirillshkro/gshortener/internal/handler/shortener/middleware"
+	"github.com/kirillshkro/gshortener/internal/proto"
 	"github.com/kirillshkro/gshortener/internal/repository/storage"
 	"github.com/kirillshkro/gshortener/internal/service/audit"
 	"github.com/kirillshkro/gshortener/internal/types"
+	"google.golang.org/grpc"
 )
 
 // App представляет основную структуру приложения, объединяющую все компоненты.
 // Содержит конфигурацию, сервис сокращения URL, маршрутизатор HTTP,
 // HTTP-сервер и канал для обработки сигналов прерывания.
 type App struct {
-	cfg       *config.Config     // Конфигурация приложения
-	service   *shortener.Service // Сервис сокращения URL
-	router    *mux.Router        // Маршрутизатор HTTP-запросов
-	server    *http.Server       // HTTP-сервер
-	interrupt chan os.Signal     // Канал для получения сигналов прерывания
-	mu        sync.Mutex         // Синхронизатор для безопасного обновления конфигурации
+	cfg         *config.Config     // Конфигурация приложения
+	service     *shortener.Service // Сервис сокращения URL
+	router      *mux.Router        // Маршрутизатор HTTP-запросов
+	server      *http.Server       // HTTP-сервер
+	grpcServer  *grpc.Server       // gRPC-сервер
+	interrupt   chan os.Signal     // Канал для получения сигналов прерывания
+	mu          sync.Mutex         // Синхронизатор для безопасного обновления конфигурации
 }
 
 // NewApp создает новый экземпляр приложения с переданной конфигурацией.
@@ -203,6 +208,7 @@ func (a *App) parseFlags() {
 	flag.StringVar(&a.cfg.AuditFile, "audit-file", a.cfg.AuditFile, "Set audit file path")
 	flag.BoolVar(&a.cfg.EnableHTTPS, "s", a.cfg.EnableHTTPS, "Set HTTPS mode")
 	flag.StringVar(&a.cfg.ConfigFile, "c", a.cfg.ConfigFile, "Set path to JSON configuration file")
+	flag.StringVar(&a.cfg.GRPCAddress, "grpc", a.cfg.GRPCAddress, "Set gRPC server address")
 	flag.Parse()
 
 	var err error
@@ -212,6 +218,39 @@ func (a *App) parseFlags() {
 	}
 
 	a.router = a.setupRouter(a.service)
+}
+
+// setupGRPCServer настраивает gRPC-сервер с зарегистрированным ShortenerService.
+// Возвращает настроенный grpc.Server или nil, если GRPC_ADDRESS не задан в конфигурации.
+func (a *App) setupGRPCServer() *grpc.Server {
+	if a.cfg.GRPCAddress == "" {
+		return nil
+	}
+
+	s := grpc.NewServer()
+	proto.RegisterShortenerServiceServer(s, grpcserver.NewServer(a.service))
+
+	return s
+}
+
+// runGRPCServer запускает gRPC-сервер в отдельной горутине.
+// При возникновении ошибки выполнения логирует фатальную ошибку.
+func (a *App) runGRPCServer() {
+	if a.grpcServer == nil {
+		return
+	}
+
+	lis, err := net.Listen("tcp", a.cfg.GRPCAddress)
+	if err != nil {
+		log.Fatalf("failed to listen for gRPC on %s: %v", a.cfg.GRPCAddress, err)
+	}
+
+	go func() {
+		log.Printf("gRPC server is listening on %s\n", a.cfg.GRPCAddress)
+		if err := a.grpcServer.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			log.Fatalf("gRPC server error: %v", err)
+		}
+	}()
 }
 
 // runServer запускает HTTP-сервер в отдельной горутине.
@@ -227,7 +266,7 @@ func (a *App) runServer() error {
 	}
 
 	go func() {
-		log.Printf("server is listening on %s\n", a.cfg.Address)
+		log.Printf("HTTP server is listening on %s\n", a.cfg.Address)
 		if !a.cfg.EnableHTTPS {
 			if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Fatalf("error listen server is %s\n", err.Error())
@@ -243,11 +282,11 @@ func (a *App) runServer() error {
 	return nil
 }
 
-// gracefulShutdown ожидает сигналы завершения и выполняет корректное завершение сервера.
+// gracefulShutdown ожидает сигналы завершения и выполняет корректное завершение серверов.
 //
-// Ожидает сигналы SIGTERM и SIGINT.
+// Ожидает сигналы SIGTERM, SIGQUIT и SIGINT.
 // При получении сигнала создает контекст с таймаутом в 30 секунд
-// для корректного завершения всех активных соединений.
+// для корректного завершения HTTP и gRPC соединений.
 // При ошибке завершения логирует фатальную ошибку.
 func (a *App) gracefulShutdown() {
 	signal.Notify(a.interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
@@ -256,19 +295,25 @@ func (a *App) gracefulShutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := a.server.Shutdown(ctx); err != nil {
-		log.Fatalf("Failed to shutdown server: %v", err)
-		log.Fatalf("Server stopped")
+	if a.server != nil {
+		if err := a.server.Shutdown(ctx); err != nil {
+			log.Printf("Failed to shutdown HTTP server: %v", err)
+		}
 	}
 
-	log.Println("Shutting down server...")
+	if a.grpcServer != nil {
+		a.grpcServer.GracefulStop()
+	}
+
+	log.Println("Shutting down servers...")
 }
 
 // Run запускает основную логику приложения:
 // 1. Разбор флагов командной строки
-// 2. Запуск HTTP-сервера
-// 3. Ожидание сигналов завершения
-// 4. Корректное завершение работы
+// 2. Настройка и запуск HTTP-сервера
+// 3. Настройка и запуск gRPC-сервера
+// 4. Ожидание сигналов завершения
+// 5. Корректное завершение работы
 //
 // Возвращает:
 //   - error: ошибка, если не удалось запустить сервер
@@ -278,6 +323,9 @@ func (a *App) Run() error {
 	if err != nil {
 		return err
 	}
+
+	a.grpcServer = a.setupGRPCServer()
+	a.runGRPCServer()
 
 	a.gracefulShutdown()
 	return nil
