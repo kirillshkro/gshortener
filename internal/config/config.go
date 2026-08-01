@@ -29,11 +29,11 @@ func GetConfig() *Config {
 // types of storage (file, database), server address and URLs, as well as audit logging options.
 type Config struct {
 	// Address is the address on which the server should listen.
-	Address string `env:"ADDRESS" env-default:"localhost:8080" json:"address"`
+	Address string `env:"ADDRESS" env-default:"localhost:8080"`
 	// ShortedURL is the base URL for shortened links.
-	ShortedURL string `env:"SHORTED_URL" env-default:"http://localhost:8080" json:"short_url"`
+	ShortedURL string `env:"SHORTED_URL" env-default:"http://localhost:8080"`
 	// FileDB is the path to a file where the server should store data.
-	FileDB string `env:"FILE_STORAGE_PATH" env-default:"/tmp/shortener.json" json:"file_db_path"`
+	FileDB string `env:"FILE_STORAGE_PATH" env-default:"/tmp/shortener.json"`
 	// DSN (Data Source Name) is used for database connections.
 	DSN string `env:"DATABASE_DSN" json:"database_dsn"`
 	// AuditFile is the path to a file where audit logs should be written.
@@ -41,13 +41,15 @@ type Config struct {
 	// AuditURL is the URL to which audit logs should be sent.
 	AuditURL string `env:"AUDIT_URL" json:"audit_url"`
 	// EnableHTTPS is flag to enable HTTPS.
-	EnableHTTPS bool `env:"ENABLE_HTTPS" env-default:"false" json:"enable_https"`
+	EnableHTTPS bool `env:"ENABLE_HTTPS" env-default:"false"`
 	// CertFile is the path to the SSL certificate file.
-	CertFile string `env:"CERT_FILE" json:"cert_file"`
+	CertFile string `env:"CERT_FILE"`
 	// KeyFile is the path to the SSL key file.
-	KeyFile string `env:"KEY_FILE" json:"key_file"`
+	KeyFile string `env:"KEY_FILE"`
 	// ConfigFile is the path to the configuration file.
-	ConfigFile string `env:"CONFIG" json:"config_file"`
+	ConfigFile string `env:"CONFIG"`
+	// GRPCAddress is the address on which the gRPC server should listen.
+	GRPCAddress string `env:"GRPC_ADDRESS" env-default:""`
 }
 
 // newConfig reads configuration from environment variables and, if a config file
